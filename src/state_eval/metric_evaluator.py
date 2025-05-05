@@ -74,6 +74,7 @@ class MetricsEvaluator:
         """Main entry for all pre-run validations."""
         self._validate_output_directory()
         self._validate_perturbation_columns()
+        self._validate_control_in_perturbation_columns()
         self._validate_celltypes()
 
     def _validate_output_directory(self):
@@ -92,6 +93,15 @@ class MetricsEvaluator:
         assert (
             self.pert_col in self.adata_real.obs.columns
         ), f"Perturbation column '{self.pert_col}' not found in real anndata"
+
+    def _validate_control_in_perturbation_columns(self):
+        """Validate that that provided control exists in the perturbation columns."""
+        assert (
+            self.control in self.adata_pred.obs[self.pert_col].unique()
+        ), f"Control '{self.control}' not found in pred anndata perturbation column"
+        assert (
+            self.control in self.adata_real.obs[self.pert_col].unique()
+        ), f"Control '{self.control}' not found in real anndata perturbation column"
 
     def _validate_celltypes(self):
         """Validate celltypes and perturbation sets."""
