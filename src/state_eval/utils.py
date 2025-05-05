@@ -265,6 +265,8 @@ class ClusteringAgreementEvaluator:
         embed_key: Optional[str] = None,
     ) -> ad.AnnData:
         feats = adata.obsm.get(embed_key, adata.X)
+        if feats.dtype != np.dtype("float64"):
+            feats = feats.astype(np.float64)
         cats = adata.obs[category_key].values
         uniq, inv = np.unique(cats, return_inverse=True)
         centroids = np.zeros((uniq.size, feats.shape[1]), dtype=feats.dtype)
