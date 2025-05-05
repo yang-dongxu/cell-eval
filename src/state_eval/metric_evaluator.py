@@ -73,6 +73,9 @@ class MetricsEvaluator:
     def _validate_inputs(self):
         """Main entry for all pre-run validations."""
         self._validate_output_directory()
+        self._validate_perturbation_columns()
+        self._validate_control_in_perturbation_columns()
+        self._validate_celltype_column()
         self._validate_celltypes()
 
     def _validate_output_directory(self):
@@ -83,8 +86,35 @@ class MetricsEvaluator:
             # Recursively create output directory
             os.makedirs(self.outdir)
 
+    def _validate_perturbation_columns(self):
+        """Validate that the provided perturbation column is in each anndata."""
+        assert self.pert_col in self.adata_pred.obs.columns, (
+            f"Perturbation column '{self.pert_col}' not found in pred anndata"
+        )
+        assert self.pert_col in self.adata_real.obs.columns, (
+            f"Perturbation column '{self.pert_col}' not found in real anndata"
+        )
+
+    def _validate_control_in_perturbation_columns(self):
+        """Validate that that provided control exists in the perturbation columns."""
+        assert self.control in self.adata_pred.obs[self.pert_col].unique(), (
+            f"Control '{self.control}' not found in pred anndata perturbation column"
+        )
+        assert self.control in self.adata_real.obs[self.pert_col].unique(), (
+            f"Control '{self.control}' not found in real anndata perturbation column"
+        )
+
+    def _validate_celltype_column(self):
+        """Validate that the celltype column exists in the anndata."""
+        assert self.celltype_col in self.adata_pred.obs.columns, (
+            f"Celltype column '{self.celltype_col}' not found in pred anndata"
+        )
+        assert self.celltype_col in self.adata_real.obs.columns, (
+            f"Celltype column '{self.celltype_col}' not found in real anndata"
+        )
+
     def _validate_celltypes(self):
-        """Validate celltypes and perturbation sets."""
+        """Validate celltypes and perturbation sets are equivalent between pred and real adatas."""
         # Gather perturbations per celltype for pred and real
         pred = self.adata_pred.obs.groupby(self.celltype_col)[self.pert_col].agg(set)
         real = self.adata_real.obs.groupby(self.celltype_col)[self.pert_col].agg(set)

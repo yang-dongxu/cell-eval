@@ -1,10 +1,10 @@
 [project]
 name = "state-eval"
-version = "0.1.1"
+version = "0.1.2"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
 authors = [
-    { name = "Abhinav Adduri", email = "abbhinav.adduri@arcinsistute.org" },
+    { name = "Abhinav Adduri", email = "abhinav.adduri@arcinsistute.org" },
     { name = "Yusuf Roohani", email = "yusuf.roohani@arcinsistute.org" },
     { name = "Noam Teyssier", email = "noam.teyssier@arcinsistute.org" },
 ]
