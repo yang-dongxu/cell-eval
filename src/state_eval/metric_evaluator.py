@@ -88,30 +88,30 @@ class MetricsEvaluator:
 
     def _validate_perturbation_columns(self):
         """Validate that the provided perturbation column is in each anndata."""
-        assert (
-            self.pert_col in self.adata_pred.obs.columns
-        ), f"Perturbation column '{self.pert_col}' not found in pred anndata"
-        assert (
-            self.pert_col in self.adata_real.obs.columns
-        ), f"Perturbation column '{self.pert_col}' not found in real anndata"
+        assert self.pert_col in self.adata_pred.obs.columns, (
+            f"Perturbation column '{self.pert_col}' not found in pred anndata"
+        )
+        assert self.pert_col in self.adata_real.obs.columns, (
+            f"Perturbation column '{self.pert_col}' not found in real anndata"
+        )
 
     def _validate_control_in_perturbation_columns(self):
         """Validate that that provided control exists in the perturbation columns."""
-        assert (
-            self.control in self.adata_pred.obs[self.pert_col].unique()
-        ), f"Control '{self.control}' not found in pred anndata perturbation column"
-        assert (
-            self.control in self.adata_real.obs[self.pert_col].unique()
-        ), f"Control '{self.control}' not found in real anndata perturbation column"
+        assert self.control in self.adata_pred.obs[self.pert_col].unique(), (
+            f"Control '{self.control}' not found in pred anndata perturbation column"
+        )
+        assert self.control in self.adata_real.obs[self.pert_col].unique(), (
+            f"Control '{self.control}' not found in real anndata perturbation column"
+        )
 
     def _validate_celltype_column(self):
         """Validate that the celltype column exists in the anndata."""
-        assert (
-            self.celltype_col in self.adata_pred.obs.columns
-        ), f"Celltype column '{self.celltype_col}' not found in pred anndata"
-        assert (
-            self.celltype_col in self.adata_real.obs.columns
-        ), f"Celltype column '{self.celltype_col}' not found in real anndata"
+        assert self.celltype_col in self.adata_pred.obs.columns, (
+            f"Celltype column '{self.celltype_col}' not found in pred anndata"
+        )
+        assert self.celltype_col in self.adata_real.obs.columns, (
+            f"Celltype column '{self.celltype_col}' not found in real anndata"
+        )
 
     def _validate_celltypes(self):
         """Validate celltypes and perturbation sets are equivalent between pred and real adatas."""
@@ -122,13 +122,13 @@ class MetricsEvaluator:
         self.real_celltype_perts = real.to_dict()
 
         # Ensure matching celltypes and perturbation sets
-        assert set(self.pred_celltype_perts) == set(
-            self.real_celltype_perts
-        ), "Pred and real adatas do not share identical celltypes"
+        assert set(self.pred_celltype_perts) == set(self.real_celltype_perts), (
+            "Pred and real adatas do not share identical celltypes"
+        )
         for ct in self.pred_celltype_perts:
-            assert (
-                self.pred_celltype_perts[ct] == self.real_celltype_perts[ct]
-            ), f"Different perturbations for celltype: {ct}"
+            assert self.pred_celltype_perts[ct] == self.real_celltype_perts[ct], (
+                f"Different perturbations for celltype: {ct}"
+            )
 
     def compute(self):
         """

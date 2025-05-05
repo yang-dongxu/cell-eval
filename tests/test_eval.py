@@ -72,15 +72,15 @@ def test_eval():
     evaluator.compute()
 
     for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(
-            f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"
-        ), f"Expected file for downstream DE results missing for celltype: {x}"
-        assert os.path.exists(
-            f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"
-        ), f"Expected file for predicted DE results missing for celltype: {x}"
-        assert os.path.exists(
-            f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"
-        ), f"Expected file for real DE results missing for celltype: {x}"
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
+            f"Expected file for downstream DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
+            f"Expected file for predicted DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
+            f"Expected file for real DE results missing for celltype: {x}"
+        )
 
 
 @pytest.mark.xfail
