@@ -21,7 +21,9 @@ logger = logging.getLogger(__name__)
 # PASTED FROM ARC SEQ #
 
 
-def parallel_compute_de(adata_gene, control_pert, pert_col, outdir=None, split="real"):
+def parallel_compute_de(
+    adata_gene, control_pert, pert_col, outdir=None, split="real", prefix: str = ""
+):
     """
     Compute differential expression using parallel_differential_expression,
     returns two DataFrames: one sorted by fold change and one by p-value
@@ -68,12 +70,14 @@ def parallel_compute_de(adata_gene, control_pert, pert_col, outdir=None, split="
         batch_size=1000,  # Adjust based on memory constraints
     )
 
-    celltype = adata_gene.obs["celltype_name"].values[0]
-
     # # Save out the de results
     if outdir is not None:
+        filename = f"{split}_de_results_{control_pert}.csv"
+        if prefix:
+            filename = f"{prefix}_{filename}"
         outfile = os.path.join(
-            outdir, f"{celltype}_{split}_de_results_{control_pert}.csv"
+            outdir,
+            filename,
         )
         # if it doesn't already exist, write it out
         if not os.path.exists(outfile):
