@@ -18,7 +18,7 @@ MAX_UMI = 1e6
 
 RANDOM_SEED = 42
 
-OUTDIR = "./tests/"
+OUTDIR = "TEST_OUTPUT_DIRECTORY"
 
 
 def build_random_anndata(
