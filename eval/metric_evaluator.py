@@ -1,6 +1,6 @@
 import pandas as pd
 from collections import defaultdict
-from eval_utils import (
+from eval.utils import (
     to_dense,
     compute_mse,
     compute_pearson_delta,

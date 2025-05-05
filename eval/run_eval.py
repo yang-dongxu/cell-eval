@@ -1,4 +1,4 @@
-from metric_computer import MetricsEvaluator
+from eval.metric_evaluator import MetricsEvaluator
 import scanpy as sc
 import argparse
 import yaml
@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument(
         "--eval_config",
         type=str,
-        default='/home/yhr/state-eval/eval_config.yaml',
+        default='/home/yhr/state-eval/config/eval_config.yaml',
         help="If set, will load the config.yaml file from the output_dir and use it to set up the model.",
     )
     return parser.parse_args()

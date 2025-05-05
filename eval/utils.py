@@ -18,7 +18,7 @@ from sklearn.metrics.pairwise import rbf_kernel, cosine_similarity
 import anndata as ad
 import scanpy as sc
 from tqdm import tqdm
-from de_utils import parallel_compute_de
+from eval.de_utils import parallel_compute_de
 
 from sklearn.metrics import (
     adjusted_mutual_info_score,
