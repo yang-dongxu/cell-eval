@@ -21,11 +21,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-          python-version-file: ".python-version"
+          python-version: "3.12"
 
       - name: install dependencies
         run: |
-          uv sync --locked --all-extras --dev
+          uv sync --all-extras --dev
 
       - name: run formatting
         run: |
@@ -42,11 +42,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-          python-version-file: ".python-version"
+          python-version: "3.12"
 
       - name: install dependencies
         run: |
-          uv sync --locked --all-extras --dev
+          uv sync --all-extras --dev
 
       - name: run pytest
         run: |
@@ -63,11 +63,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
-          python-version-file: ".python-version"
+          python-version: "3.12"
 
       - name: install dependencies
         run: |
-          uv sync --locked --all-extras --dev
+          uv sync --all-extras --dev
 
       - name: run cli tests
         run: |
