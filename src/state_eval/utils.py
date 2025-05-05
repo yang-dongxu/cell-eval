@@ -351,6 +351,7 @@ def compute_DE_for_truth_and_pred(
     adata_pred_ct: ad.AnnData,
     control_pert: str,
     pert_col: str = "gene",
+    celltype_col: str = "celltype",
     n_top_genes: int = 2000,
     output_space: str = "gene",
     outdir=None,
@@ -359,14 +360,28 @@ def compute_DE_for_truth_and_pred(
     start = time.time()
     # Real DE
     DE_true_fc, DE_true_pval, DE_true_pval_fc, DE_true_sig, DE_true_df = (
-        parallel_compute_de(adata_real_ct, control_pert, pert_col, outdir, "real")
+        parallel_compute_de(
+            adata_real_ct,
+            control_pert,
+            pert_col,
+            outdir,
+            "real",
+            prefix=adata_real_ct.obs[celltype_col].values[0],
+        )
     )
     tools_logger.info(f"True DE in {time.time() - start:.2f}s")
     # Pred DE
     start = time.time()
     adata_pred_ct.var.index = adata_real_ct.var.index
     DE_pred_fc, DE_pred_pval, DE_pred_pval_fc, DE_pred_sig, DE_pred_df = (
-        parallel_compute_de(adata_pred_ct, control_pert, pert_col, outdir, "pred")
+        parallel_compute_de(
+            adata_pred_ct,
+            control_pert,
+            pert_col,
+            outdir,
+            "pred",
+            prefix=adata_pred_ct.obs[celltype_col].values[0],
+        )
     )
     tools_logger.info(f"Pred DE in {time.time() - start:.2f}s")
     return (
