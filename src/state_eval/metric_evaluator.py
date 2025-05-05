@@ -276,7 +276,9 @@ class MetricsEvaluator:
         )
 
         # Clustering agreement
-        clusterer = ClusteringAgreementEvaluator(embed_key=self.embed_key)
+        clusterer = ClusteringAgreementEvaluator(
+            embed_key=self.embed_key, perturb_key=self.pert_col
+        )
         cl_agree = clusterer.compute(
             adata_real=self.adata_real, adata_pred=self.adata_pred
         )
