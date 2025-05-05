@@ -1,4 +1,4 @@
 uv.lock
 **/__pycache__
 eval_output/
-tests/*.csv
+**/celltype*csv
