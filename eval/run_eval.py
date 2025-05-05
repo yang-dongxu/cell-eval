@@ -5,7 +5,7 @@ import yaml
 
 def parse_args():
     """
-    CLI for evaluation. The arguments mirror some of the old script_lightning/eval_lightning.py.
+    CLI for evaluation
     """
     parser = argparse.ArgumentParser(description="Evaluate a trained cell state model.")
     parser.add_argument(
@@ -62,8 +62,6 @@ def main():
 
     # Compute the metrics
     metrics = evaluator.compute()
-
-    breakpoint()
     print("Done")
 
 if __name__ == "__main__":
