@@ -73,6 +73,7 @@ class MetricsEvaluator:
     def _validate_inputs(self):
         """Main entry for all pre-run validations."""
         self._validate_output_directory()
+        self._validate_perturbation_columns()
         self._validate_celltypes()
 
     def _validate_output_directory(self):
@@ -83,6 +84,15 @@ class MetricsEvaluator:
             # Recursively create output directory
             os.makedirs(self.outdir)
 
+    def _validate_perturbation_columns(self):
+        """Validate that the provided perturbation column is in each anndata."""
+        assert (
+            self.pert_col in self.adata_pred.obs.columns
+        ), f"Perturbation column '{self.pert_col}' not found in pred anndata"
+        assert (
+            self.pert_col in self.adata_real.obs.columns
+        ), f"Perturbation column '{self.pert_col}' not found in real anndata"
+
     def _validate_celltypes(self):
         """Validate celltypes and perturbation sets."""
         # Gather perturbations per celltype for pred and real
@@ -92,13 +102,13 @@ class MetricsEvaluator:
         self.real_celltype_perts = real.to_dict()
 
         # Ensure matching celltypes and perturbation sets
-        assert set(self.pred_celltype_perts) == set(self.real_celltype_perts), (
-            "Pred and real adatas do not share identical celltypes"
-        )
+        assert set(self.pred_celltype_perts) == set(
+            self.real_celltype_perts
+        ), "Pred and real adatas do not share identical celltypes"
         for ct in self.pred_celltype_perts:
-            assert self.pred_celltype_perts[ct] == self.real_celltype_perts[ct], (
-                f"Different perturbations for celltype: {ct}"
-            )
+            assert (
+                self.pred_celltype_perts[ct] == self.real_celltype_perts[ct]
+            ), f"Different perturbations for celltype: {ct}"
 
     def compute(self):
         """
