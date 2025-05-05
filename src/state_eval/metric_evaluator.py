@@ -90,13 +90,13 @@ class MetricsEvaluator:
         self.real_celltype_perts = real.to_dict()
 
         # Ensure matching celltypes and perturbation sets
-        assert set(self.pred_celltype_perts) == set(
-            self.real_celltype_perts
-        ), "Pred and real adatas do not share identical celltypes"
+        assert set(self.pred_celltype_perts) == set(self.real_celltype_perts), (
+            "Pred and real adatas do not share identical celltypes"
+        )
         for ct in self.pred_celltype_perts:
-            assert (
-                self.pred_celltype_perts[ct] == self.real_celltype_perts[ct]
-            ), f"Different perturbations for celltype: {ct}"
+            assert self.pred_celltype_perts[ct] == self.real_celltype_perts[ct], (
+                f"Different perturbations for celltype: {ct}"
+            )
 
     def _reset_indices(self):
         # Ensure obs indices are simple RangeIndex

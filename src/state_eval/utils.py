@@ -361,14 +361,14 @@ def compute_DE_for_truth_and_pred(
     DE_true_fc, DE_true_pval, DE_true_pval_fc, DE_true_sig, DE_true_df = (
         parallel_compute_de(adata_real_ct, control_pert, pert_col, outdir, "real")
     )
-    tools_logger.info(f"True DE in {time.time()-start:.2f}s")
+    tools_logger.info(f"True DE in {time.time() - start:.2f}s")
     # Pred DE
     start = time.time()
     adata_pred_ct.var.index = adata_real_ct.var.index
     DE_pred_fc, DE_pred_pval, DE_pred_pval_fc, DE_pred_sig, DE_pred_df = (
         parallel_compute_de(adata_pred_ct, control_pert, pert_col, outdir, "pred")
     )
-    tools_logger.info(f"Pred DE in {time.time()-start:.2f}s")
+    tools_logger.info(f"Pred DE in {time.time() - start:.2f}s")
     return (
         DE_true_fc,
         DE_pred_fc,
