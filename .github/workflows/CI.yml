@@ -3,33 +3,72 @@ name: "CI"
 on: [push, pull_request]
 
 jobs:
-  ci:
+  all_jobs:
+    runs-on: ubuntu-latest
+    needs: [formatting, pytest, cli-test]
+    steps:
+      - name: Complete
+        run: echo "Complete"
+
+  formatting:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+          python-version-file: ".python-version"
 
-      - name: Setup Python
+      - name: install dependencies
         run: |
-          uv python install 3.12
-          uv venv
+          uv sync --locked --all-extras --dev
 
-      - name: Install project
-        run: |
-          uv sync --all-extras --dev
-          uv tool install .
-
-      - name: Check formatting
+      - name: run formatting
         run: |
           uv run ruff format --check
 
-      - name: Test with pytest
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+          python-version-file: ".python-version"
+
+      - name: install dependencies
+        run: |
+          uv sync --locked --all-extras --dev
+
+      - name: run pytest
         run: |
           uv run pytest -v
 
-      - name: Test cli usage
+  cli-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+          python-version-file: ".python-version"
+
+      - name: install dependencies
+        run: |
+          uv sync --locked --all-extras --dev
+
+      - name: run cli tests
         run: |
           uv run run_eval --help
