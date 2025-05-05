@@ -65,7 +65,7 @@ def main():
     )
 
     # Compute the metrics
-    metrics = evaluator.compute()
+    evaluator.compute()
     print("Done")
 
 
