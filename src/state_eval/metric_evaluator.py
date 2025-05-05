@@ -1,6 +1,6 @@
-# setup logger
 import multiprocessing as mp
 import os
+import sys
 from collections import defaultdict
 from functools import partial
 
@@ -70,19 +70,21 @@ class MetricsEvaluator:
         # Internal storage
         self.metrics = {}
 
-    def compute(self):
-        """
-        Main entry point: validate inputs, reset indices, process each celltype,
-        and finalize metrics as DataFrames.
-        """
+    def _validate_inputs(self):
+        """Main entry for all pre-run validations."""
+        self._validate_output_directory()
         self._validate_celltypes()
-        self._reset_indices()
-        for celltype in self.pred_celltype_perts:
-            self.metrics[celltype] = defaultdict(list)
-            self._compute_for_celltype(celltype)
-        return self._finalize_metrics()
+
+    def _validate_output_directory(self):
+        """Validate and create output directory if it doesn't exist."""
+        if os.path.exists(self.outdir):
+            print("Output directory exists - potential overwrite case", file=sys.stderr)
+        else:
+            # Recursively create output directory
+            os.makedirs(self.outdir)
 
     def _validate_celltypes(self):
+        """Validate celltypes and perturbation sets."""
         # Gather perturbations per celltype for pred and real
         pred = self.adata_pred.obs.groupby(self.celltype_col)[self.pert_col].agg(set)
         real = self.adata_real.obs.groupby(self.celltype_col)[self.pert_col].agg(set)
@@ -97,6 +99,18 @@ class MetricsEvaluator:
             assert self.pred_celltype_perts[ct] == self.real_celltype_perts[ct], (
                 f"Different perturbations for celltype: {ct}"
             )
+
+    def compute(self):
+        """
+        Main entry point: validate inputs, reset indices, process each celltype,
+        and finalize metrics as DataFrames.
+        """
+        self._validate_inputs()
+        self._reset_indices()
+        for celltype in self.pred_celltype_perts:
+            self.metrics[celltype] = defaultdict(list)
+            self._compute_for_celltype(celltype)
+        return self._finalize_metrics()
 
     def _reset_indices(self):
         # Ensure obs indices are simple RangeIndex
