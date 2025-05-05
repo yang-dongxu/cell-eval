@@ -4,6 +4,6 @@ pert_col: "pert_name"
 celltype_col: "celltype_name"
 output_space: "gene"
 shared_perts: null
-outdir: "/home/yhr/state-eval/output/"
+outdir: "./eval_output/"
 de_metric: true
 class_score: true

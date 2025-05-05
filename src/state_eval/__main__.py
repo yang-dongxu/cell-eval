@@ -1,7 +1,10 @@
-from eval.metric_evaluator import MetricsEvaluator
-import scanpy as sc
 import argparse
+
+import scanpy as sc
 import yaml
+
+from .metric_evaluator import MetricsEvaluator
+
 
 def parse_args():
     """
@@ -11,22 +14,23 @@ def parse_args():
     parser.add_argument(
         "--adata_pred",
         type=str,
-        default='/home/yhr/state-eval/adata_pred_subset.h5ad',
+        default="/home/yhr/state-eval/adata_pred_subset.h5ad",
         help="Path to the predicted adata object to evaluate",
     )
     parser.add_argument(
         "--adata_true",
         type=str,
-        default='/home/yhr/state-eval/adata_real_subset.h5ad',
+        default="/home/yhr/state-eval/adata_real_subset.h5ad",
         help="Path to the true adata object to evaluate against",
     )
     parser.add_argument(
         "--eval_config",
         type=str,
-        default='/home/yhr/state-eval/config/eval_config.yaml',
+        default="/home/yhr/state-eval/config/eval_config.yaml",
         help="If set, will load the config.yaml file from the output_dir and use it to set up the model.",
     )
     return parser.parse_args()
+
 
 def main():
     """
@@ -35,7 +39,7 @@ def main():
 
     # Parse arguments
     args = parse_args()
-    print('Reading adata objects')
+    print("Reading adata objects")
     # Read the adata objects
     adata_pred = sc.read_h5ad(args.adata_pred)
     adata_real = sc.read_h5ad(args.adata_true)
@@ -44,7 +48,7 @@ def main():
     with open(args.eval_config, "r") as f:
         config = yaml.safe_load(f)
 
-    print('Running evaluation')
+    print("Running evaluation")
     # Create the evaluator
     evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
@@ -57,12 +61,13 @@ def main():
         shared_perts=config["shared_perts"],
         outdir=config["outdir"],
         de_metric=config["de_metric"],
-        class_score=config["class_score"]
+        class_score=config["class_score"],
     )
 
     # Compute the metrics
-    metrics = evaluator.compute()
+    evaluator.compute()
     print("Done")
+
 
 if __name__ == "__main__":
     main()

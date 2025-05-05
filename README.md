@@ -2,6 +2,25 @@
 
 Set config parameters in `eval_config.yaml`
 
+## Installation
+
+Distribution with [`uv`](https://docs.astral.sh/uv/)
+
+```bash
+# install from github directly
+uv pip install git+ssh://github.com/arcinstitute/state-eval
+
+# install from source
+git clone ssh://github.com/arcinstitute/state-eval
+cd state-eval
+uv pip install -e .
 ```
-python -m eval.run_eval --adata_pred '/home/yhr/state-eval/adata_pred_subset.h5ad' --adata_true '/home/yhr/state-eval/adata_real_subset.h5ad' 
+
+## Usage
+
+```bash
+# run evaluation
+uv run run_eval \
+    --adata_pred <your/path/to/pred>.h5ad \
+    --adata_true <your/path/to/true>.h5ad
 ```
