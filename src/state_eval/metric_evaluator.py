@@ -75,6 +75,7 @@ class MetricsEvaluator:
         self._validate_output_directory()
         self._validate_perturbation_columns()
         self._validate_control_in_perturbation_columns()
+        self._validate_celltype_column()
         self._validate_celltypes()
 
     def _validate_output_directory(self):
@@ -103,8 +104,17 @@ class MetricsEvaluator:
             self.control in self.adata_real.obs[self.pert_col].unique()
         ), f"Control '{self.control}' not found in real anndata perturbation column"
 
+    def _validate_celltype_column(self):
+        """Validate that the celltype column exists in the anndata."""
+        assert (
+            self.celltype_col in self.adata_pred.obs.columns
+        ), f"Celltype column '{self.celltype_col}' not found in pred anndata"
+        assert (
+            self.celltype_col in self.adata_real.obs.columns
+        ), f"Celltype column '{self.celltype_col}' not found in real anndata"
+
     def _validate_celltypes(self):
-        """Validate celltypes and perturbation sets."""
+        """Validate celltypes and perturbation sets are equivalent between pred and real adatas."""
         # Gather perturbations per celltype for pred and real
         pred = self.adata_pred.obs.groupby(self.celltype_col)[self.pert_col].agg(set)
         real = self.adata_real.obs.groupby(self.celltype_col)[self.pert_col].agg(set)
