@@ -269,13 +269,16 @@ class MetricsEvaluator:
             pred_gene_ct or pred_ct,
             control_pert=self.control,
             pert_col=self.pert_col,
+            celltype_col=self.celltype_col,
             n_top_genes=2000,
             output_space=self.output_space,
             outdir=self.outdir,
         )
 
         # Clustering agreement
-        clusterer = ClusteringAgreementEvaluator(embed_key=self.embed_key)
+        clusterer = ClusteringAgreementEvaluator(
+            embed_key=self.embed_key, perturb_key=self.pert_col
+        )
         cl_agree = clusterer.compute(
             adata_real=self.adata_real, adata_pred=self.adata_pred
         )
