@@ -2,6 +2,9 @@
 
 Set config parameters in `eval_config.yaml`
 
-```
-python -m eval.run_eval --adata_pred '/home/yhr/state-eval/adata_pred_subset.h5ad' --adata_true '/home/yhr/state-eval/adata_real_subset.h5ad' 
+```bash
+python \
+    -m eval.run_eval \
+    --adata_pred '/home/yhr/state-eval/adata_pred_subset.h5ad' \
+    --adata_true '/home/yhr/state-eval/adata_real_subset.h5ad'
 ```
