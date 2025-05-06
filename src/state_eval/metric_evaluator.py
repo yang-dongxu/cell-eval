@@ -5,6 +5,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Optional
 
+import anndata as ad
 import numpy as np
 import pandas as pd
 import scipy
@@ -17,7 +18,6 @@ from .utils import (
     compute_directionality_agreement,
     compute_downstream_DE_metrics,
     compute_gene_overlap_cross_pert,
-    compute_mse,
     compute_pearson_delta,
     compute_pearson_delta_separate_controls,
     compute_perturbation_ranking_score,
@@ -217,7 +217,8 @@ class MetricsEvaluator:
         )
         return adata[mask]
 
-    def _group_indices(self, adata, celltype):
+    def _group_indices(self, adata: ad.AnnData, celltype: str) -> dict[str, np.ndarray]:
+        """Return a dictionary mapping perturbation IDs to their corresponding cell indices."""
         mask = adata.obs[self.celltype_col] == celltype
         return adata.obs[mask].groupby(self.pert_col).indices
 
@@ -267,10 +268,19 @@ class MetricsEvaluator:
         for k, v in curr.items():
             self.metrics[celltype][k].append(v)
 
-    def _compute_basic_metrics(self, pred, true, ctrl_true, ctrl_pred, suffix=""):
-        """Compute MSE, Pearson and cosine metrics."""
+    def _compute_basic_metrics(
+        self,
+        pred: np.ndarray,
+        true: np.ndarray,
+        ctrl_true: np.ndarray,
+        ctrl_pred: np.ndarray,
+        suffix: str = "",
+    ):
+        """Compute MSE, Pearson and cosine metrics.
+
+        All numpy array inputs are assumed to be 2D _dense_ arrays.
+        """
         m = {}
-        m[f"mse_{suffix}"] = compute_mse(pred, true, ctrl_true, ctrl_pred)
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
             pred, true, ctrl_true, ctrl_pred
         )

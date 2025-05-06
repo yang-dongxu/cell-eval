@@ -54,9 +54,51 @@ def build_random_anndata(
     )
 
 
+def downsample_cells(
+    adata: ad.AnnData,
+    fraction: float = 0.5,
+) -> ad.AnnData:
+    """Downsample cells in an AnnData object.
+
+    Copies the output to avoid memory overlaps.
+    """
+    assert 0 <= fraction <= 1, "Fraction must be between 0 and 1"
+    mask = np.random.rand(adata.shape[0]) < fraction
+    return adata[mask, :].copy()
+
+
 def test_eval():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        include_dist_metrics=True,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        celltype_col=CELLTYPE_COL,
+        output_space="gene",
+        shared_perts=None,
+        outdir=OUTDIR,
+        class_score=True,
+    )
+    evaluator.compute()
+
+    for x in np.arange(N_CELLTYPES):
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
+            f"Expected file for downstream DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
+            f"Expected file for predicted DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
+            f"Expected file for real DE results missing for celltype: {x}"
+        )
+
+
+def test_eval_downsampled_cells():
+    adata_real = build_random_anndata()
+    adata_pred = downsample_cells(adata_real, fraction=0.5)
     evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
