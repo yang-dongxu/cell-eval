@@ -62,6 +62,8 @@ def main():
         outdir=config["outdir"],
         de_metric=config["de_metric"],
         class_score=config["class_score"],
+        n_threads=config["n_threads"] if "n_threads" in config else None,
+        batch_size=config["batch_size"] if "batch_size" in config else None,
     )
 
     # Compute the metrics
