@@ -3,7 +3,7 @@ import os
 import sys
 from collections import defaultdict
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 
 import anndata as ad
 import numpy as np
@@ -245,7 +245,7 @@ class MetricsEvaluator:
         )
         return m
 
-    def _compute_de_metrics(self, celltype):
+    def _compute_de_metrics(self, celltype: str):
         """Run DE on full data and compute overlap & related metrics."""
         # Subset by celltype & relevant perts
         real_ct = self.adata_real[self.adata_real.obs[self.celltype_col] == celltype]
@@ -386,7 +386,7 @@ class MetricsEvaluator:
             DE_pred_df, DE_true_df, outdir=self.outdir, celltype=celltype
         )
 
-    def _compute_class_score(self, celltype):
+    def _compute_class_score(self, celltype: str):
         """Compute perturbation ranking score and invert for interpretability."""
         ct_real = self.adata_real[self.adata_real.obs[self.celltype_col] == celltype]
         ct_pred = self.adata_pred[self.adata_pred.obs[self.celltype_col] == celltype]
@@ -404,21 +404,26 @@ class MetricsEvaluator:
         return out
 
 
-def init_worker(global_pred_df, global_true_df):
+def init_worker(global_pred_df: pd.DataFrame, global_true_df: pd.DataFrame):
     global PRED_DF
     global TRUE_DF
     PRED_DF = global_pred_df
     TRUE_DF = global_true_df
 
 
-def compute_downstream_DE_metrics_parallel(target_gene, p_value_threshold):
+def compute_downstream_DE_metrics_parallel(target_gene: str, p_value_threshold: float):
     return compute_downstream_DE_metrics(
         target_gene, PRED_DF, TRUE_DF, p_value_threshold
     )
 
 
 def get_downstream_DE_metrics(
-    DE_pred_df, DE_true_df, outdir, celltype, n_workers=10, p_value_threshold=0.05
+    DE_pred_df: pd.DataFrame,
+    DE_true_df: pd.DataFrame,
+    outdir: str,
+    celltype: str,
+    n_workers: int = 10,
+    p_value_threshold: float = 0.05,
 ):
     for df in (DE_pred_df, DE_true_df):
         df["abs_fold_change"] = np.abs(df["fold_change"])
@@ -444,7 +449,7 @@ def get_downstream_DE_metrics(
     return results_df
 
 
-def get_batched_mean(X, batches):
+def get_batched_mean(X: Union[np.ndarray, scipy.sparse.csr_matrix], batches):
     if scipy.sparse.issparse(X):
         df = pd.DataFrame(X.todense())
     else:
