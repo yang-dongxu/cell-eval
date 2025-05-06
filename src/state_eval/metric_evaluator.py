@@ -3,7 +3,7 @@ import os
 import sys
 from collections import defaultdict
 from functools import partial
-from typing import Optional
+from typing import Optional, Union
 
 import anndata as ad
 import numpy as np
@@ -30,20 +30,19 @@ from .utils import (
 class MetricsEvaluator:
     def __init__(
         self,
-        adata_pred,
-        adata_real,
-        embed_key=None,
-        include_dist_metrics=False,
-        control_pert="non-targeting",
-        pert_col="pert_name",
-        celltype_col="celltype_name",
-        batch_col="gem_group",
-        output_space="gene",
-        decoder=None,
-        shared_perts=None,
-        outdir=None,
-        de_metric=True,
-        class_score=True,
+        adata_pred: ad.AnnData,
+        adata_real: ad.AnnData,
+        embed_key: Optional[str] = None,
+        include_dist_metrics: bool = False,
+        control_pert: str = "non-targeting",
+        pert_col: str = "pert_name",
+        celltype_col: str = "celltype_name",
+        batch_col: str = "gem_group",
+        output_space: str = "gene",
+        shared_perts: Optional[list[str]] = None,
+        outdir: Optional[str] = None,
+        de_metric: bool = True,
+        class_score: bool = True,
         n_threads: Optional[int] = None,
         batch_size: Optional[int] = None,
     ):
@@ -59,7 +58,6 @@ class MetricsEvaluator:
         self.celltype_col = celltype_col
         self.batch_col = batch_col
         self.output_space = output_space
-        self.decoder = decoder
         self.shared_perts = set(shared_perts) if shared_perts else None
         self.outdir = outdir
         self.de_metric = de_metric
@@ -151,7 +149,7 @@ class MetricsEvaluator:
         self.adata_pred.obs.reset_index(drop=True, inplace=True)
         self.adata_pred.obs.index = pd.Categorical(self.adata_pred.obs.index)
 
-    def _compute_for_celltype(self, celltype):
+    def _compute_for_celltype(self, celltype: str):
         # Extract control samples
         pred_ctrl = self._get_samples(self.adata_pred, celltype, self.control)
         real_ctrl = self._get_samples(self.adata_real, celltype, self.control)
@@ -163,9 +161,6 @@ class MetricsEvaluator:
             else self.pred_celltype_perts[celltype]
         )
 
-        # TODO: Deprecate this line? Unused variable
-        _perts = [p for p in all_perts if p != self.control]
-
         # Group sample indices by perturbation for fast slicing
         pred_groups = self._group_indices(self.adata_pred, celltype)
         real_groups = self._group_indices(self.adata_real, celltype)
@@ -175,12 +170,7 @@ class MetricsEvaluator:
             if pert == self.control:
                 continue
             self._compute_for_pert(
-                celltype,
-                pert,
-                pred_groups,
-                real_groups,
-                pred_ctrl,
-                real_ctrl
+                celltype, pert, pred_groups, real_groups, pred_ctrl, real_ctrl
             )
 
         # Differential expression metrics
@@ -190,7 +180,8 @@ class MetricsEvaluator:
         if self.class_score:
             self._compute_class_score(celltype)
 
-    def _get_samples(self, adata, celltype, pert):
+    def _get_samples(self, adata: ad.AnnData, celltype: str, pert: str) -> ad.AnnData:
+        """Isolate the samples for a specific cell type and perturbation."""
         mask = (adata.obs[self.celltype_col] == celltype) & (
             adata.obs[self.pert_col] == pert
         )
@@ -203,16 +194,17 @@ class MetricsEvaluator:
 
     def _compute_for_pert(
         self,
-        celltype,
-        pert,
-        pred_groups,
-        real_groups,
-        pred_ctrl,
-        real_ctrl
+        celltype: str,
+        pert: str,
+        pred_groups: dict[str, np.ndarray],
+        real_groups: dict[str, np.ndarray],
+        pred_ctrl: ad.AnnData,
+        real_ctrl: ad.AnnData,
     ):
-        idx_pred = pred_groups.get(pert, [])
-        idx_true = real_groups.get(pert, [])
-        if len(idx_pred) == 0 or len(idx_true) == 0:
+        """Compute metrics for a specific perturbation and cell type."""
+        idx_pred = pred_groups.get(pert, np.array([]))
+        idx_true = real_groups.get(pert, np.array([]))
+        if idx_pred.size == 0 or idx_true.size == 0:
             return
 
         # Extract X arrays and ensure dense
@@ -253,7 +245,7 @@ class MetricsEvaluator:
         )
         return m
 
-    def _compute_de_metrics(self, celltype):
+    def _compute_de_metrics(self, celltype: str):
         """Run DE on full data and compute overlap & related metrics."""
         # Subset by celltype & relevant perts
         real_ct = self.adata_real[self.adata_real.obs[self.celltype_col] == celltype]
@@ -394,7 +386,7 @@ class MetricsEvaluator:
             DE_pred_df, DE_true_df, outdir=self.outdir, celltype=celltype
         )
 
-    def _compute_class_score(self, celltype):
+    def _compute_class_score(self, celltype: str):
         """Compute perturbation ranking score and invert for interpretability."""
         ct_real = self.adata_real[self.adata_real.obs[self.celltype_col] == celltype]
         ct_pred = self.adata_pred[self.adata_pred.obs[self.celltype_col] == celltype]
@@ -412,21 +404,26 @@ class MetricsEvaluator:
         return out
 
 
-def init_worker(global_pred_df, global_true_df):
+def init_worker(global_pred_df: pd.DataFrame, global_true_df: pd.DataFrame):
     global PRED_DF
     global TRUE_DF
     PRED_DF = global_pred_df
     TRUE_DF = global_true_df
 
 
-def compute_downstream_DE_metrics_parallel(target_gene, p_value_threshold):
+def compute_downstream_DE_metrics_parallel(target_gene: str, p_value_threshold: float):
     return compute_downstream_DE_metrics(
         target_gene, PRED_DF, TRUE_DF, p_value_threshold
     )
 
 
 def get_downstream_DE_metrics(
-    DE_pred_df, DE_true_df, outdir, celltype, n_workers=10, p_value_threshold=0.05
+    DE_pred_df: pd.DataFrame,
+    DE_true_df: pd.DataFrame,
+    outdir: str,
+    celltype: str,
+    n_workers: int = 10,
+    p_value_threshold: float = 0.05,
 ):
     for df in (DE_pred_df, DE_true_df):
         df["abs_fold_change"] = np.abs(df["fold_change"])
@@ -452,7 +449,7 @@ def get_downstream_DE_metrics(
     return results_df
 
 
-def get_batched_mean(X, batches):
+def get_batched_mean(X: Union[np.ndarray, scipy.sparse.csr_matrix], batches):
     if scipy.sparse.issparse(X):
         df = pd.DataFrame(X.todense())
     else:
