@@ -163,9 +163,6 @@ class MetricsEvaluator:
             else self.pred_celltype_perts[celltype]
         )
 
-        # TODO: Deprecate this line? Unused variable
-        _perts = [p for p in all_perts if p != self.control]
-
         # Group sample indices by perturbation for fast slicing
         pred_groups = self._group_indices(self.adata_pred, celltype)
         real_groups = self._group_indices(self.adata_real, celltype)
