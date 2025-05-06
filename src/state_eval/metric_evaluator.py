@@ -5,6 +5,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Optional
 
+import anndata as ad
 import numpy as np
 import pandas as pd
 import scipy
@@ -217,7 +218,8 @@ class MetricsEvaluator:
         )
         return adata[mask]
 
-    def _group_indices(self, adata, celltype):
+    def _group_indices(self, adata: ad.AnnData, celltype: str) -> dict[str, np.ndarray]:
+        """Return a dictionary mapping perturbation IDs to their corresponding cell indices."""
         mask = adata.obs[self.celltype_col] == celltype
         return adata.obs[mask].groupby(self.pert_col).indices
 
