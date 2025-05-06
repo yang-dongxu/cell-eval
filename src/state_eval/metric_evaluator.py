@@ -197,11 +197,18 @@ class MetricsEvaluator:
         return adata.obs[mask].groupby(self.pert_col).indices
 
     def _compute_for_pert(
-        self, celltype, pert, pred_groups, real_groups, pred_ctrl, real_ctrl
+        self,
+        celltype: str,
+        pert: str,
+        pred_groups: dict[str, np.ndarray],
+        real_groups: dict[str, np.ndarray],
+        pred_ctrl: ad.AnnData,
+        real_ctrl: ad.AnnData,
     ):
-        idx_pred = pred_groups.get(pert, [])
-        idx_true = real_groups.get(pert, [])
-        if len(idx_pred) == 0 or len(idx_true) == 0:
+        """Compute metrics for a specific perturbation and cell type."""
+        idx_pred = pred_groups.get(pert, np.array([]))
+        idx_true = real_groups.get(pert, np.array([]))
+        if idx_pred.size == 0 or idx_true.size == 0:
             return
 
         # Extract X arrays and ensure dense
