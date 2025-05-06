@@ -175,12 +175,7 @@ class MetricsEvaluator:
             if pert == self.control:
                 continue
             self._compute_for_pert(
-                celltype,
-                pert,
-                pred_groups,
-                real_groups,
-                pred_ctrl,
-                real_ctrl
+                celltype, pert, pred_groups, real_groups, pred_ctrl, real_ctrl
             )
 
         # Differential expression metrics
@@ -202,13 +197,7 @@ class MetricsEvaluator:
         return adata.obs[mask].groupby(self.pert_col).indices
 
     def _compute_for_pert(
-        self,
-        celltype,
-        pert,
-        pred_groups,
-        real_groups,
-        pred_ctrl,
-        real_ctrl
+        self, celltype, pert, pred_groups, real_groups, pred_ctrl, real_ctrl
     ):
         idx_pred = pred_groups.get(pert, [])
         idx_true = real_groups.get(pert, [])
