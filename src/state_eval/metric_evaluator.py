@@ -18,7 +18,6 @@ from .utils import (
     compute_directionality_agreement,
     compute_downstream_DE_metrics,
     compute_gene_overlap_cross_pert,
-    compute_mse,
     compute_pearson_delta,
     compute_pearson_delta_separate_controls,
     compute_perturbation_ranking_score,
@@ -282,7 +281,6 @@ class MetricsEvaluator:
         All numpy array inputs are assumed to be 2D _dense_ arrays.
         """
         m = {}
-        m[f"mse_{suffix}"] = compute_mse(pred, true)
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
             pred, true, ctrl_true, ctrl_pred
         )
