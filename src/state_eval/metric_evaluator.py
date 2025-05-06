@@ -151,7 +151,7 @@ class MetricsEvaluator:
         self.adata_pred.obs.reset_index(drop=True, inplace=True)
         self.adata_pred.obs.index = pd.Categorical(self.adata_pred.obs.index)
 
-    def _compute_for_celltype(self, celltype):
+    def _compute_for_celltype(self, celltype: str):
         # Extract control samples
         pred_ctrl = self._get_samples(self.adata_pred, celltype, self.control)
         real_ctrl = self._get_samples(self.adata_real, celltype, self.control)
