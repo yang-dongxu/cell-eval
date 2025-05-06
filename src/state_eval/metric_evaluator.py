@@ -185,7 +185,8 @@ class MetricsEvaluator:
         if self.class_score:
             self._compute_class_score(celltype)
 
-    def _get_samples(self, adata, celltype, pert):
+    def _get_samples(self, adata: ad.AnnData, celltype: str, pert: str) -> ad.AnnData:
+        """Isolate the samples for a specific cell type and perturbation."""
         mask = (adata.obs[self.celltype_col] == celltype) & (
             adata.obs[self.pert_col] == pert
         )
