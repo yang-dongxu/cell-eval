@@ -16,10 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # - name: setup ssh
-      #   run: |
-      #     eval `ssh-agent -s`
-      #     ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY_PDEX }}"
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_PDEX }}
 
       - name: install uv
         uses: astral-sh/setup-uv@v5
@@ -30,8 +30,6 @@ jobs:
 
       - name: install dependencies
         run: |
-          eval `ssh-agent -s`
-          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY_PDEX }}"
           uv sync --all-extras --dev
 
   formatting:
