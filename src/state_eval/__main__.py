@@ -68,6 +68,9 @@ def main():
 
     # Compute the metrics
     evaluator.compute()
+
+    # Save the metrics
+    evaluator.save_metrics()
     print("Done")
 
 
