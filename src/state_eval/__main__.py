@@ -70,7 +70,7 @@ def main():
     evaluator.compute()
 
     # Save the metrics
-    evaluator.save_metrics()
+    evaluator.save_metrics_per_celltype()
     print("Done")
 
 
