@@ -22,7 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 def parallel_compute_de(
-    adata_gene, control_pert, pert_col, outdir=None, split="real", prefix: str = ""
+    adata_gene,
+    control_pert,
+    pert_col,
+    outdir=None,
+    split="real",
+    prefix: str = "",
+    n_threads: int = 1,
+    batch_size: int = 1000,
 ):
     """
     Compute differential expression using parallel_differential_expression,
@@ -66,8 +73,8 @@ def parallel_compute_de(
         groups=valid_groups,
         reference=control_pert,
         groupby_key=pert_col,
-        num_workers=120,  # Adjust based on your system
-        batch_size=1000,  # Adjust based on memory constraints
+        num_workers=n_threads,
+        batch_size=batch_size,
     )
 
     # # Save out the de results

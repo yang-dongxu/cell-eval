@@ -357,6 +357,8 @@ def compute_DE_for_truth_and_pred(
     n_top_genes: int = 2000,
     output_space: str = "gene",
     outdir=None,
+    n_threads: int = 1,
+    batch_size: int = 1000,
 ):
     # Dataset-specific var index adjustments omitted for brevity
     start = time.time()
@@ -369,6 +371,8 @@ def compute_DE_for_truth_and_pred(
             outdir,
             "real",
             prefix=adata_real_ct.obs[celltype_col].values[0],
+            n_threads=n_threads,
+            batch_size=batch_size,
         )
     )
     tools_logger.info(f"True DE in {time.time() - start:.2f}s")

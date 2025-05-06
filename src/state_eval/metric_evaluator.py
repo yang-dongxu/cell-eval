@@ -3,6 +3,7 @@ import os
 import sys
 from collections import defaultdict
 from functools import partial
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -45,6 +46,8 @@ class MetricsEvaluator:
         outdir=None,
         de_metric=True,
         class_score=True,
+        n_threads: Optional[int] = None,
+        batch_size: Optional[int] = None,
     ):
         # Primary data
         self.adata_pred = adata_pred
@@ -66,6 +69,9 @@ class MetricsEvaluator:
         self.outdir = outdir
         self.de_metric = de_metric
         self.class_score = class_score
+
+        self.n_threads = n_threads if n_threads is not None else mp.cpu_count()
+        self.batch_size = batch_size if batch_size is not None else 1000
 
         # Internal storage
         self.metrics = {}
@@ -317,6 +323,8 @@ class MetricsEvaluator:
             n_top_genes=2000,
             output_space=self.output_space,
             outdir=self.outdir,
+            n_threads=self.n_threads,
+            batch_size=self.batch_size,
         )
 
         # Clustering agreement
