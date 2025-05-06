@@ -140,7 +140,7 @@ class MetricsEvaluator:
             self.metrics[celltype] = defaultdict(list)
             self._compute_for_celltype(celltype)
         self.metrics = self._finalize_metrics()
-        return 
+        return
 
     def _reset_indices(self):
         # Ensure obs indices are simple RangeIndex
