@@ -2,6 +2,12 @@
 
 Set config parameters in `eval_config.yaml`
 
+## Description
+
+This package provides evaluation metrics for single-cell perturbation predictions.
+
+Differential expression analysis (parallel wilcoxon rank sum) is performed using [`pdex`](https://github.com/arcinstitute/pdex).
+
 ## Installation
 
 Distribution with [`uv`](https://docs.astral.sh/uv/)
