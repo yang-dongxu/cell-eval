@@ -5,6 +5,7 @@ import time
 from collections.abc import Iterator
 from functools import partial
 from multiprocessing.shared_memory import SharedMemory
+from typing import Optional
 
 import anndata as ad
 import numpy as np
@@ -22,11 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 def parallel_compute_de(
-    adata_gene,
-    control_pert,
-    pert_col,
-    outdir=None,
-    split="real",
+    adata_gene: ad.AnnData,
+    control_pert: str,
+    pert_col: str,
+    outdir: Optional[str] = None,
+    split: str = "real",
     prefix: str = "",
     n_threads: int = 1,
     batch_size: int = 1000,
@@ -43,8 +44,16 @@ def parallel_compute_de(
         Name of the control perturbation to use as reference
     pert_col : str
         Column in adata_gene.obs that contains perturbation information
-    k : int
-        Number of top genes to return for each perturbation
+    outdir : str, optional
+        Directory to save output files, by default None
+    split : str, optional
+        Split type for differential expression analysis, by default "real"
+    prefix : str, optional
+        Prefix for output file names, by default ""
+    n_threads : int, optional
+        Number of threads to use for parallel computation, by default 1
+    batch_size : int, optional
+        Batch size for parallel computation, by default 1000
 
     Returns
     -------
