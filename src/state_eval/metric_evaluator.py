@@ -30,16 +30,15 @@ from .utils import (
 class MetricsEvaluator:
     def __init__(
         self,
-        adata_pred,
-        adata_real,
-        embed_key=None,
-        include_dist_metrics=False,
-        control_pert="non-targeting",
-        pert_col="pert_name",
-        celltype_col="celltype_name",
-        batch_col="gem_group",
-        output_space="gene",
-        decoder=None,
+        adata_pred: ad.AnnData,
+        adata_real: ad.AnnData,
+        embed_key: Optional[str] = None,
+        include_dist_metrics: bool = False,
+        control_pert: str = "non-targeting",
+        pert_col: str = "pert_name",
+        celltype_col: str = "celltype_name",
+        batch_col: str = "gem_group",
+        output_space: str = "gene",
         shared_perts=None,
         outdir=None,
         de_metric=True,
@@ -59,7 +58,6 @@ class MetricsEvaluator:
         self.celltype_col = celltype_col
         self.batch_col = batch_col
         self.output_space = output_space
-        self.decoder = decoder
         self.shared_perts = set(shared_perts) if shared_perts else None
         self.outdir = outdir
         self.de_metric = de_metric
