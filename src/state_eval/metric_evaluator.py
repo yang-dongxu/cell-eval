@@ -267,8 +267,18 @@ class MetricsEvaluator:
         for k, v in curr.items():
             self.metrics[celltype][k].append(v)
 
-    def _compute_basic_metrics(self, pred, true, ctrl_true, ctrl_pred, suffix=""):
-        """Compute MSE, Pearson and cosine metrics."""
+    def _compute_basic_metrics(
+        self,
+        pred: np.ndarray,
+        true: np.ndarray,
+        ctrl_true: np.ndarray,
+        ctrl_pred: np.ndarray,
+        suffix: str = "",
+    ):
+        """Compute MSE, Pearson and cosine metrics.
+
+        All numpy array inputs are assumed to be 2D _dense_ arrays.
+        """
         m = {}
         m[f"mse_{suffix}"] = compute_mse(pred, true, ctrl_true, ctrl_pred)
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
