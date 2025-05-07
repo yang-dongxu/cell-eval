@@ -403,8 +403,10 @@ class MetricsEvaluator:
         for ct, data in self.metrics.items():
             out[ct] = pd.DataFrame(data).set_index("pert")
         return out
-    
-    def save_metrics_per_celltype(self, average=False):
+
+    def save_metrics_per_celltype(
+        self, metrics: Optional[dict[str, pd.DataFrame]], average=False
+    ):
         """
         Save the metrics per cell type to a CSV file.
         """
