@@ -12,6 +12,7 @@ import scipy.sparse
 from ott.geometry.pointcloud import PointCloud
 from ott.problems.linear.linear_problem import LinearProblem
 from ott.solvers.linear.sinkhorn import Sinkhorn
+from scipy.sparse import issparse
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import (
     adjusted_mutual_info_score,
@@ -264,9 +265,17 @@ class ClusteringAgreementEvaluator:
         category_key: str,
         embed_key: Optional[str] = None,
     ) -> ad.AnnData:
+        # Isolate the features
         feats = adata.obsm.get(embed_key, adata.X)
+
+        # Convert to float if not already
         if feats.dtype != np.dtype("float64"):
             feats = feats.astype(np.float64)
+
+        # Densify if required
+        if issparse(feats):
+            feats = feats.toarray()
+
         cats = adata.obs[category_key].values
         uniq, inv = np.unique(cats, return_inverse=True)
         centroids = np.zeros((uniq.size, feats.shape[1]), dtype=feats.dtype)
