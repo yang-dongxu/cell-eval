@@ -80,9 +80,27 @@ class MetricsEvaluator:
         self._validate_control_in_perturbation_columns()
         self._validate_celltype_column()
         self._validate_celltypes()
+        self._validate_var()
 
         if not self.skip_normlog_check:
             self._validate_normlog()
+
+    def _validate_var(self):
+        """validates that variables are equivalent between both adata."""
+
+        # Check sizes
+        if self.adata_pred.shape[1] != self.adata_real.shape[1]:
+            raise ValueError(
+                "Mismatched sizes in number of genes between adata_pred and adata_real."
+            )
+
+        # Check ordering
+        if not np.all(
+            self.adata_pred.var_names.values == self.adata_real.var_names.values
+        ):
+            raise ValueError(
+                "Ordering of genes is not the same between adata_pred and adata_real"
+            )
 
     def _validate_normlog(self, n_cells: int = 100):
         """Validates that the input is normalized and log-transformed.
