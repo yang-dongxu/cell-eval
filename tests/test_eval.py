@@ -239,22 +239,21 @@ def test_broken_adata_missing_pertcol_in_pred():
     # Remove pert_col from adata_pred
     adata_pred.obs.drop(columns=[PERT_COL], inplace=True)
 
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
 
 
-@pytest.mark.xfail
 def test_broken_adata_missing_celltypecol_in_real():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
@@ -262,22 +261,21 @@ def test_broken_adata_missing_celltypecol_in_real():
     # Remove celltype_col from adata_real
     adata_real.obs.drop(columns=[CELLTYPE_COL], inplace=True)
 
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
 
 
-@pytest.mark.xfail
 def test_broken_adata_missing_celltypecol_in_pred():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
@@ -285,22 +283,21 @@ def test_broken_adata_missing_celltypecol_in_pred():
     # Remove celltype_col from adata_pred
     adata_pred.obs.drop(columns=[CELLTYPE_COL], inplace=True)
 
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
 
 
-@pytest.mark.xfail
 def test_broken_adata_missing_control_in_real():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
@@ -308,22 +305,21 @@ def test_broken_adata_missing_control_in_real():
     # Remove control_pert from adata_real
     adata_real = adata_real[adata_real.obs[PERT_COL] != CONTROL_VAR].copy()
 
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
 
 
-@pytest.mark.xfail
 def test_broken_adata_missing_control_in_pred():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
@@ -331,16 +327,16 @@ def test_broken_adata_missing_control_in_pred():
     # Remove control_pert from adata_pred
     adata_pred = adata_pred[adata_pred.obs[PERT_COL] != CONTROL_VAR].copy()
 
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
