@@ -17,6 +17,7 @@ N_GENES = 100
 N_PERTS = 10
 N_CELLTYPES = 3
 MAX_UMI = 1e6
+NORM_TOTAL = 1e4
 
 RANDOM_SEED = 42
 
@@ -33,14 +34,25 @@ def build_random_anndata(
     control_var: str = CONTROL_VAR,
     random_state: int = RANDOM_SEED,
     as_sparse: bool = False,
+    normlog: bool = True,
+    normtotal: int = NORM_TOTAL,
 ) -> ad.AnnData:
     """Sample a random AnnData object."""
     if random_state is not None:
         np.random.seed(random_state)
 
+    # Randomly sample a matrix
     matrix = np.random.randint(0, MAX_UMI, size=(n_cells, n_genes))
+
+    # Normalize and log transform if required
+    if normlog:
+        matrix = int(normlog) * (matrix / matrix.sum(axis=1).reshape(-1, 1))
+        matrix = np.log1p(matrix)
+
+    # Convert to sparse if required
     if as_sparse:
         matrix = csr_matrix(matrix)
+
     return ad.AnnData(
         X=matrix,
         obs=pd.DataFrame(
@@ -160,15 +172,30 @@ def test_eval_downsampled_cells():
         )
 
 
-@pytest.mark.xfail
-def test_broken_adata_missing_pertcol_in_real():
-    adata_real = build_random_anndata()
+def test_broken_adata_not_normlog():
+    adata_real = build_random_anndata(normlog=False)
     adata_pred = adata_real.copy()
 
-    # Remove pert_col from adata_real
-    adata_real.obs.drop(columns=[PERT_COL], inplace=True)
+    with pytest.raises(Exception):
+        evaluator = MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
+        evaluator.compute()
 
-    evaluator = MetricsEvaluator(
+
+def test_broken_adata_not_normlog_skip_check():
+    adata_real = build_random_anndata(normlog=False)
+    adata_pred = adata_real.copy()
+    MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
         include_dist_metrics=True,
@@ -179,11 +206,32 @@ def test_broken_adata_missing_pertcol_in_real():
         shared_perts=None,
         outdir=OUTDIR,
         class_score=True,
+        skip_normlog_check=True,
     )
-    evaluator.compute()
 
 
-@pytest.mark.xfail
+def test_broken_adata_missing_pertcol_in_real():
+    adata_real = build_random_anndata()
+    adata_pred = adata_real.copy()
+
+    # Remove pert_col from adata_real
+    adata_real.obs.drop(columns=[PERT_COL], inplace=True)
+
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
+
+
 def test_broken_adata_missing_pertcol_in_pred():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
