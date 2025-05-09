@@ -455,7 +455,7 @@ class MetricsEvaluator:
         return out
 
     def save_metrics_per_celltype(
-        self, metrics: Optional[dict[str, pd.DataFrame]], average=False
+        self, metrics: Optional[dict[str, pd.DataFrame]] = None, average=False
     ):
         """
         Save the metrics per cell type to a CSV file.
