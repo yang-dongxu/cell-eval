@@ -396,6 +396,8 @@ def compute_DE_for_truth_and_pred(
             outdir,
             "pred",
             prefix=adata_pred_ct.obs[celltype_col].values[0],
+            n_threads=n_threads,
+            batch_size=batch_size,
         )
     )
     tools_logger.info(f"Pred DE in {time.time() - start:.2f}s")
