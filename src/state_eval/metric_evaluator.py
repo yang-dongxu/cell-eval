@@ -71,6 +71,8 @@ class MetricsEvaluator:
         # Internal storage
         self.metrics = {}
 
+        self._validate_inputs()
+
     def _validate_inputs(self):
         """Main entry for all pre-run validations."""
         self._validate_output_directory()
