@@ -85,90 +85,50 @@ def downsample_cells(
     return adata[mask, :].copy()
 
 
-def test_eval():
-    adata_real = build_random_anndata()
+def test_broken_adata_mismatched_var_size():
+    adata_real = build_random_anndata(normlog=False)
     adata_pred = adata_real.copy()
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
 
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
+    # Randomly subset genes on pred
+    var_mask = np.random.random(adata_real.shape[1]) < 0.8
+    adata_pred = adata_pred[:, var_mask]
+
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
         )
 
 
-def test_eval_sparse():
-    adata_real = build_random_anndata(as_sparse=True)
+def test_broken_adata_mismatched_var_ordering():
+    adata_real = build_random_anndata(normlog=False)
     adata_pred = adata_real.copy()
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
 
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
-        )
+    # Randomly subset genes on pred
+    indices = np.arange(adata_real.shape[1])
+    np.random.shuffle(indices)
+    adata_pred = adata_pred[:, indices]
 
-
-def test_eval_downsampled_cells():
-    adata_real = build_random_anndata()
-    adata_pred = downsample_cells(adata_real, fraction=0.5)
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-    )
-    evaluator.compute()
-
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
         )
 
 
@@ -339,4 +299,91 @@ def test_broken_adata_missing_control_in_pred():
             shared_perts=None,
             outdir=OUTDIR,
             class_score=True,
+        )
+
+
+def test_eval():
+    adata_real = build_random_anndata()
+    adata_pred = adata_real.copy()
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        include_dist_metrics=True,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        celltype_col=CELLTYPE_COL,
+        output_space="gene",
+        shared_perts=None,
+        outdir=OUTDIR,
+        class_score=True,
+    )
+    evaluator.compute()
+
+    for x in np.arange(N_CELLTYPES):
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
+            f"Expected file for downstream DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
+            f"Expected file for predicted DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
+            f"Expected file for real DE results missing for celltype: {x}"
+        )
+
+
+def test_eval_sparse():
+    adata_real = build_random_anndata(as_sparse=True)
+    adata_pred = adata_real.copy()
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        include_dist_metrics=True,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        celltype_col=CELLTYPE_COL,
+        output_space="gene",
+        shared_perts=None,
+        outdir=OUTDIR,
+        class_score=True,
+    )
+    evaluator.compute()
+
+    for x in np.arange(N_CELLTYPES):
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
+            f"Expected file for downstream DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
+            f"Expected file for predicted DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
+            f"Expected file for real DE results missing for celltype: {x}"
+        )
+
+
+def test_eval_downsampled_cells():
+    adata_real = build_random_anndata()
+    adata_pred = downsample_cells(adata_real, fraction=0.5)
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        include_dist_metrics=True,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        celltype_col=CELLTYPE_COL,
+        output_space="gene",
+        shared_perts=None,
+        outdir=OUTDIR,
+        class_score=True,
+    )
+    evaluator.compute()
+
+    for x in np.arange(N_CELLTYPES):
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
+            f"Expected file for downstream DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
+            f"Expected file for predicted DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
+            f"Expected file for real DE results missing for celltype: {x}"
         )
