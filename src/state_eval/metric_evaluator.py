@@ -103,9 +103,9 @@ class MetricsEvaluator:
                 "If this is an error, rerun with `skip_normlog_check=True`"
             )
 
-        if suspected_discrete(self.adata_true.X, n_cells):
+        if suspected_discrete(self.adata_real.X, n_cells):
             raise ValueError(
-                "Error: adata_true appears not to be log-transformed. We expect normed+logged input"
+                "Error: adata_real appears not to be log-transformed. We expect normed+logged input"
                 "If this is an error, rerun with `skip_normlog_check=True`"
             )
 
