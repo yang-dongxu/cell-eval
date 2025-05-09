@@ -45,6 +45,7 @@ class MetricsEvaluator:
         class_score: bool = True,
         n_threads: Optional[int] = None,
         batch_size: Optional[int] = None,
+        skip_normlog_check: bool = False,
     ):
         # Primary data
         self.adata_pred = adata_pred
@@ -62,12 +63,15 @@ class MetricsEvaluator:
         self.outdir = outdir
         self.de_metric = de_metric
         self.class_score = class_score
+        self.skip_normlog_check = skip_normlog_check
 
         self.n_threads = n_threads if n_threads is not None else mp.cpu_count()
         self.batch_size = batch_size if batch_size is not None else 1000
 
         # Internal storage
         self.metrics = {}
+
+        self._validate_inputs()
 
     def _validate_inputs(self):
         """Main entry for all pre-run validations."""
@@ -76,6 +80,34 @@ class MetricsEvaluator:
         self._validate_control_in_perturbation_columns()
         self._validate_celltype_column()
         self._validate_celltypes()
+
+        if not self.skip_normlog_check:
+            self._validate_normlog()
+
+    def _validate_normlog(self, n_cells: int = 100):
+        """Validates that the input is normalized and log-transformed.
+
+        Short-hand validation, just checks if the input is integer or float
+        on a subset of data (1%)
+        """
+
+        def suspected_discrete(x: np.ndarray, n_cells: int) -> bool:
+            top_n = min(x.shape[0], n_cells)
+            rowsum = x[:top_n].sum(axis=1)
+            frac, _ = np.modf(rowsum)
+            return np.all(frac == 0)
+
+        if suspected_discrete(self.adata_pred.X, n_cells):
+            raise ValueError(
+                "Error: adata_pred appears not to be log-transformed. We expect normed+logged input"
+                "If this is an error, rerun with `skip_normlog_check=True`"
+            )
+
+        if suspected_discrete(self.adata_real.X, n_cells):
+            raise ValueError(
+                "Error: adata_real appears not to be log-transformed. We expect normed+logged input"
+                "If this is an error, rerun with `skip_normlog_check=True`"
+            )
 
     def _validate_output_directory(self):
         """Validate and create output directory if it doesn't exist."""
