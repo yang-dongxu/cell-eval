@@ -46,6 +46,7 @@ class MetricsEvaluator:
         n_threads: Optional[int] = None,
         batch_size: Optional[int] = None,
         skip_normlog_check: bool = False,
+        minimal_eval: bool = False,
     ):
         # Primary data
         self.adata_pred = adata_pred
@@ -64,6 +65,7 @@ class MetricsEvaluator:
         self.de_metric = de_metric
         self.class_score = class_score
         self.skip_normlog_check = skip_normlog_check
+        self.minimal_eval = minimal_eval
 
         self.n_threads = n_threads if n_threads is not None else mp.cpu_count()
         self.batch_size = batch_size if batch_size is not None else 1000
@@ -296,7 +298,12 @@ class MetricsEvaluator:
         )
         return m
 
-    def _compute_de_metrics(self, celltype: str):
+    def _compute_de_metrics(
+        self,
+        celltype: str,
+        skip_cluster_agreement: bool = False,
+        skip_fc_overlap: bool = False,
+    ):
         """Run DE on full data and compute overlap & related metrics."""
         # Subset by celltype & relevant perts
         real_ct = self.adata_real[self.adata_real.obs[self.celltype_col] == celltype]
