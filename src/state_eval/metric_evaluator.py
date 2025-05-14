@@ -457,7 +457,7 @@ class MetricsEvaluator:
     def save_metrics_per_celltype(
         self,
         metrics: Optional[dict[str, pd.DataFrame]] = None,
-        average=False,
+        average: bool = False,
         write_csv: bool = True,
     ) -> pd.DataFrame:
         """
@@ -473,6 +473,10 @@ class MetricsEvaluator:
                 df = df.mean().to_frame().T
                 df.index = [celltype]
 
+            # Append to all celltypes
+            frames.append(df)
+
+            # Write csv optionally
             if write_csv:
                 if average:
                     outpath = os.path.join(self.outdir, f"{celltype}_metrics_avg.csv")
@@ -480,8 +484,6 @@ class MetricsEvaluator:
                     outpath = os.path.join(self.outdir, f"{celltype}_metrics.csv")
 
                 df.to_csv(outpath, index=True)
-
-            frames.append(df)
 
         return pd.concat(frames)
 
