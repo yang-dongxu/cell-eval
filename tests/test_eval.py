@@ -84,6 +84,7 @@ def downsample_cells(
     mask = np.random.rand(adata.shape[0]) < fraction
     return adata[mask, :].copy()
 
+
 def test_missing_adata_input_vars():
     adata_real = build_random_anndata(normlog=False)
 

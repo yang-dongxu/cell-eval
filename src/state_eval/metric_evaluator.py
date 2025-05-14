@@ -93,7 +93,7 @@ class MetricsEvaluator:
 
         if not self.skip_normlog_check:
             self._validate_normlog()
-            
+
     def _validate_adata(self):
         """validates that either the adata path or direct values are set."""
         if self.adata_pred is None or self.adata_real is None:
