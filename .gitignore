@@ -2,3 +2,9 @@ uv.lock
 **/__pycache__
 eval_output/
 **/celltype*csv
+
+
+## Custom State-Eval Ignores
+output/*
+*.h5ad
+dist/
