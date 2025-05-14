@@ -301,6 +301,7 @@ class MetricsEvaluator:
         All numpy array inputs are assumed to be 2D _dense_ arrays.
         """
         m = {}
+
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
             pred, true, ctrl_true, ctrl_pred
         )
@@ -310,6 +311,8 @@ class MetricsEvaluator:
         m[f"cosine_{suffix}"] = compute_cosine_similarity(
             pred, true, ctrl_true, ctrl_pred
         )
+        m["membership_real"] = true.shape[0]
+        m["membership_pred"] = pred.shape[0]
         return m
 
     def _compute_de_metrics(
