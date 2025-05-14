@@ -1,6 +1,6 @@
 [project]
 name = "state-eval"
-version = "0.1.12"
+version = "0.1.13"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
 authors = [
