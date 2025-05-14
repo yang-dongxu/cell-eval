@@ -335,40 +335,46 @@ class MetricsEvaluator:
         )
 
         # Clustering agreement
-        clusterer = ClusteringAgreementEvaluator(
-            embed_key=self.embed_key, perturb_key=self.pert_col
-        )
-        cl_agree = clusterer.compute(
-            adata_real=self.adata_real, adata_pred=self.adata_pred
-        )
-        self.metrics[celltype]["clustering_agreement"] = cl_agree
+        if not self.minimal_eval:
+            clusterer = ClusteringAgreementEvaluator(
+                embed_key=self.embed_key, perturb_key=self.pert_col
+            )
+            cl_agree = clusterer.compute(
+                adata_real=self.adata_real, adata_pred=self.adata_pred
+            )
+            self.metrics[celltype]["clustering_agreement"] = cl_agree
 
         # Prepare perturbation lists
         perts = self.metrics[celltype]["pert"]
         only_perts = [p for p in perts if p != self.control]
 
         # Fold-change overlap
-        fc_overlap = compute_gene_overlap_cross_pert(
-            DE_true_fc, DE_pred_fc, control_pert=self.control, k=50
-        )
-        self.metrics[celltype]["DE_fc"] = [fc_overlap.get(p, 0.0) for p in perts]
-        self.metrics[celltype]["DE_fc_avg"] = np.mean(list(fc_overlap.values()))
+        if not self.minimal_eval:
+            fc_overlap = compute_gene_overlap_cross_pert(
+                DE_true_fc, DE_pred_fc, control_pert=self.control, k=50
+            )
+            self.metrics[celltype]["DE_fc"] = [fc_overlap.get(p, 0.0) for p in perts]
+            self.metrics[celltype]["DE_fc_avg"] = np.mean(list(fc_overlap.values()))
 
         # P-value overlap
-        pval_overlap = compute_gene_overlap_cross_pert(
-            DE_true_pval, DE_pred_pval, control_pert=self.control, k=50
-        )
-        self.metrics[celltype]["DE_pval"] = [pval_overlap.get(p, 0.0) for p in perts]
-        self.metrics[celltype]["DE_pval_avg"] = np.mean(list(pval_overlap.values()))
+        if not self.minimal_eval:
+            pval_overlap = compute_gene_overlap_cross_pert(
+                DE_true_pval, DE_pred_pval, control_pert=self.control, k=50
+            )
+            self.metrics[celltype]["DE_pval"] = [
+                pval_overlap.get(p, 0.0) for p in perts
+            ]
+            self.metrics[celltype]["DE_pval_avg"] = np.mean(list(pval_overlap.values()))
 
         # pval+fc thresholded at various k
-        for k in (50, 100, 200):
-            key = f"DE_pval_fc_{k}"
-            overlap = compute_gene_overlap_cross_pert(
-                DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=k
-            )
-            self.metrics[celltype][key] = [overlap.get(p, 0.0) for p in perts]
-            self.metrics[celltype][f"{key}_avg"] = np.mean(list(overlap.values()))
+        if not self.minimal_eval:
+            for k in (50, 100, 200):
+                key = f"DE_pval_fc_{k}"
+                overlap = compute_gene_overlap_cross_pert(
+                    DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=k
+                )
+                self.metrics[celltype][key] = [overlap.get(p, 0.0) for p in perts]
+                self.metrics[celltype][f"{key}_avg"] = np.mean(list(overlap.values()))
 
         # unlimited k
         unlimited = compute_gene_overlap_cross_pert(
@@ -378,71 +384,87 @@ class MetricsEvaluator:
         self.metrics[celltype]["DE_pval_fc_avg_N"] = np.mean(list(unlimited.values()))
 
         # precision@k
-        for topk in (50, 100, 200):
-            key = f"DE_patk_pval_fc_{topk}"
-            patk = compute_gene_overlap_cross_pert(
-                DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, topk=topk
-            )
-            self.metrics[celltype][key] = [patk.get(p, 0.0) for p in perts]
-            self.metrics[celltype][f"{key}_avg"] = np.mean(list(patk.values()))
+        if not self.minimal_eval:
+            for topk in (50, 100, 200):
+                key = f"DE_patk_pval_fc_{topk}"
+                patk = compute_gene_overlap_cross_pert(
+                    DE_true_pval_fc,
+                    DE_pred_pval_fc,
+                    control_pert=self.control,
+                    topk=topk,
+                )
+                self.metrics[celltype][key] = [patk.get(p, 0.0) for p in perts]
+                self.metrics[celltype][f"{key}_avg"] = np.mean(list(patk.values()))
 
         # recall of significant genes
-        sig_rec = compute_gene_overlap_cross_pert(
-            DE_true_sig_genes, DE_pred_sig_genes, control_pert=self.control
-        )
-        self.metrics[celltype]["DE_sig_genes_recall"] = [
-            sig_rec.get(p, 0.0) for p in perts
-        ]
-        self.metrics[celltype]["DE_sig_genes_recall_avg"] = np.mean(
-            list(sig_rec.values())
-        )
+        if not self.minimal_eval:
+            sig_rec = compute_gene_overlap_cross_pert(
+                DE_true_sig_genes, DE_pred_sig_genes, control_pert=self.control
+            )
+            self.metrics[celltype]["DE_sig_genes_recall"] = [
+                sig_rec.get(p, 0.0) for p in perts
+            ]
+            self.metrics[celltype]["DE_sig_genes_recall_avg"] = np.mean(
+                list(sig_rec.values())
+            )
 
         # effect sizes & counts
-        true_counts, pred_counts = compute_sig_gene_counts(
-            DE_true_sig_genes, DE_pred_sig_genes, only_perts
-        )
-        self.metrics[celltype]["DE_sig_genes_count_true"] = [
-            true_counts.get(p, 0) for p in only_perts
-        ]
-        self.metrics[celltype]["DE_sig_genes_count_pred"] = [
-            pred_counts.get(p, 0) for p in only_perts
-        ]
+        if not self.minimal_eval:
+            true_counts, pred_counts = compute_sig_gene_counts(
+                DE_true_sig_genes, DE_pred_sig_genes, only_perts
+            )
+            self.metrics[celltype]["DE_sig_genes_count_true"] = [
+                true_counts.get(p, 0) for p in only_perts
+            ]
+            self.metrics[celltype]["DE_sig_genes_count_pred"] = [
+                pred_counts.get(p, 0) for p in only_perts
+            ]
 
         # Spearman
-        sp = compute_sig_gene_spearman(true_counts, pred_counts, only_perts)
-        self.metrics[celltype]["DE_sig_genes_spearman"] = sp
+        if not self.minimal_eval:
+            sp = compute_sig_gene_spearman(true_counts, pred_counts, only_perts)
+            self.metrics[celltype]["DE_sig_genes_spearman"] = sp
 
         # Directionality
-        dir_match = compute_directionality_agreement(DE_true_df, DE_pred_df, only_perts)
-        self.metrics[celltype]["DE_direction_match"] = [
-            dir_match.get(p, np.nan) for p in only_perts
-        ]
-        self.metrics[celltype]["DE_direction_match_avg"] = np.nanmean(
-            list(dir_match.values())
-        )
+        if not self.minimal_eval:
+            dir_match = compute_directionality_agreement(
+                DE_true_df, DE_pred_df, only_perts
+            )
+            self.metrics[celltype]["DE_direction_match"] = [
+                dir_match.get(p, np.nan) for p in only_perts
+            ]
+            self.metrics[celltype]["DE_direction_match_avg"] = np.nanmean(
+                list(dir_match.values())
+            )
 
         # top-k gene lists
-        pred_list, true_list = [], []
-        for p in perts:
-            if p == self.control:
-                pred_list.append("")
-                true_list.append("")
-            else:
-                preds = (
-                    list(DE_pred_pval.loc[p].values) if p in DE_pred_pval.index else []
-                )
-                trues = (
-                    list(DE_true_pval.loc[p].values) if p in DE_true_pval.index else []
-                )
-                pred_list.append("|".join(preds))
-                true_list.append("|".join(trues))
-        self.metrics[celltype]["DE_pred_genes"] = pred_list
-        self.metrics[celltype]["DE_true_genes"] = true_list
+        if not self.minimal_eval:
+            pred_list, true_list = [], []
+            for p in perts:
+                if p == self.control:
+                    pred_list.append("")
+                    true_list.append("")
+                else:
+                    preds = (
+                        list(DE_pred_pval.loc[p].values)
+                        if p in DE_pred_pval.index
+                        else []
+                    )
+                    trues = (
+                        list(DE_true_pval.loc[p].values)
+                        if p in DE_true_pval.index
+                        else []
+                    )
+                    pred_list.append("|".join(preds))
+                    true_list.append("|".join(trues))
+            self.metrics[celltype]["DE_pred_genes"] = pred_list
+            self.metrics[celltype]["DE_true_genes"] = true_list
 
         # Downstream DE analyses
-        get_downstream_DE_metrics(
-            DE_pred_df, DE_true_df, outdir=self.outdir, celltype=celltype
-        )
+        if not self.minimal_eval:
+            get_downstream_DE_metrics(
+                DE_pred_df, DE_true_df, outdir=self.outdir, celltype=celltype
+            )
 
     def _compute_class_score(self, celltype: str):
         """Compute perturbation ranking score and invert for interpretability."""
