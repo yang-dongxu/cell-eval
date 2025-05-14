@@ -455,25 +455,35 @@ class MetricsEvaluator:
         return out
 
     def save_metrics_per_celltype(
-        self, metrics: Optional[dict[str, pd.DataFrame]] = None, average=False
-    ):
+        self,
+        metrics: Optional[dict[str, pd.DataFrame]] = None,
+        average=False,
+        write_csv: bool = True,
+    ) -> pd.DataFrame:
         """
         Save the metrics per cell type to a CSV file.
         """
         if metrics is None:
             metrics = self.metrics
 
+        frames = []
         for celltype, df in metrics.items():
             # Compute average metrics if requested
             if average:
                 df = df.mean().to_frame().T
                 df.index = [celltype]
 
-            if average:
-                outpath = os.path.join(self.outdir, f"{celltype}_metrics_avg.csv")
-            else:
-                outpath = os.path.join(self.outdir, f"{celltype}_metrics.csv")
-            df.to_csv(outpath, index=True)
+            if write_csv:
+                if average:
+                    outpath = os.path.join(self.outdir, f"{celltype}_metrics_avg.csv")
+                else:
+                    outpath = os.path.join(self.outdir, f"{celltype}_metrics.csv")
+
+                df.to_csv(outpath, index=True)
+
+            frames.append(df)
+
+        return pd.concat(frames)
 
 
 def init_worker(global_pred_df: pd.DataFrame, global_true_df: pd.DataFrame):
