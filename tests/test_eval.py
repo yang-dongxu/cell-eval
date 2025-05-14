@@ -331,6 +331,36 @@ def test_eval():
         )
 
 
+def test_minimal_eval():
+    adata_real = build_random_anndata()
+    adata_pred = adata_real.copy()
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        include_dist_metrics=True,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        celltype_col=CELLTYPE_COL,
+        output_space="gene",
+        shared_perts=None,
+        outdir=OUTDIR,
+        class_score=True,
+        minimal_eval=True,
+    )
+    evaluator.compute()
+
+    for x in np.arange(N_CELLTYPES):
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
+            f"Expected file for downstream DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
+            f"Expected file for predicted DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
+            f"Expected file for real DE results missing for celltype: {x}"
+        )
+
+
 def test_eval_sparse():
     adata_real = build_random_anndata(as_sparse=True)
     adata_pred = adata_real.copy()
