@@ -84,6 +84,23 @@ def downsample_cells(
     mask = np.random.rand(adata.shape[0]) < fraction
     return adata[mask, :].copy()
 
+def test_missing_adata_input_vars():
+    adata_real = build_random_anndata(normlog=False)
+
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=None,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+        )
+
 
 def test_broken_adata_mismatched_var_size():
     adata_real = build_random_anndata(normlog=False)

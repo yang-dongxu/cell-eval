@@ -1,6 +1,5 @@
 import argparse
 
-import scanpy as sc
 import yaml
 
 from .metric_evaluator import MetricsEvaluator
@@ -40,9 +39,6 @@ def main():
     # Parse arguments
     args = parse_args()
     print("Reading adata objects")
-    # Read the adata objects
-    adata_pred = sc.read_h5ad(args.adata_pred)
-    adata_real = sc.read_h5ad(args.adata_true)
 
     # Read in config file
     with open(args.eval_config, "r") as f:
@@ -51,8 +47,8 @@ def main():
     print("Running evaluation")
     # Create the evaluator
     evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
+        path_pred=args.adata_pred,
+        path_real=args.adata_true,
         include_dist_metrics=config["include_dist_metrics"],
         control_pert=config["control_pert"],
         pert_col=config["pert_col"],

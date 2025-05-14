@@ -30,8 +30,10 @@ from .utils import (
 class MetricsEvaluator:
     def __init__(
         self,
-        adata_pred: ad.AnnData,
-        adata_real: ad.AnnData,
+        adata_pred: Optional[ad.AnnData] = None,
+        adata_real: Optional[ad.AnnData] = None,
+        path_pred: Optional[str] = None,
+        path_real: Optional[str] = None,
         embed_key: Optional[str] = None,
         include_dist_metrics: bool = False,
         control_pert: str = "non-targeting",
@@ -49,8 +51,13 @@ class MetricsEvaluator:
         minimal_eval: bool = False,
     ):
         # Primary data
-        self.adata_pred = adata_pred
-        self.adata_real = adata_real
+        # Allow adata to be passed in or read from file
+        if path_pred and path_real:
+            self.adata_pred = ad.read_h5ad(path_pred)
+            self.adata_real = ad.read_h5ad(path_real)
+        else:
+            self.adata_pred = adata_pred
+            self.adata_real = adata_real
 
         # Configuration
         self.embed_key = embed_key
@@ -86,6 +93,13 @@ class MetricsEvaluator:
 
         if not self.skip_normlog_check:
             self._validate_normlog()
+            
+    def _validate_adata(self):
+        """validates that either the adata path or direct values are set."""
+        if self.adata_pred is None or self.adata_real is None:
+            raise ValueError(
+                "adata_pred and adata_real must be provided, or set path_pred and path_real."
+            )
 
     def _validate_var(self):
         """validates that variables are equivalent between both adata."""
