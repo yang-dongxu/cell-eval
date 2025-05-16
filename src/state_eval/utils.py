@@ -368,6 +368,7 @@ def compute_DE_for_truth_and_pred(
     outdir=None,
     n_threads: int = 1,
     batch_size: int = 1000,
+    metric: str = "wilcoxon",
 ):
     # Dataset-specific var index adjustments omitted for brevity
     start = time.time()
@@ -382,6 +383,7 @@ def compute_DE_for_truth_and_pred(
             prefix=adata_real_ct.obs[celltype_col].values[0],
             n_threads=n_threads,
             batch_size=batch_size,
+            metric=metric,
         )
     )
     tools_logger.info(f"True DE in {time.time() - start:.2f}s")
@@ -398,6 +400,7 @@ def compute_DE_for_truth_and_pred(
             prefix=adata_pred_ct.obs[celltype_col].values[0],
             n_threads=n_threads,
             batch_size=batch_size,
+            metric=metric,
         )
     )
     tools_logger.info(f"Pred DE in {time.time() - start:.2f}s")

@@ -320,6 +320,29 @@ def test_broken_adata_missing_control_in_pred():
         )
 
 
+def test_unknown_alternative_de_metric():
+    adata_real = build_random_anndata()
+    adata_pred = adata_real.copy()
+
+    # Remove control_pert from adata_pred
+    adata_pred = adata_pred[adata_pred.obs[PERT_COL] != CONTROL_VAR].copy()
+
+    with pytest.raises(Exception):
+        MetricsEvaluator(
+            adata_pred=adata_pred,
+            adata_real=adata_real,
+            include_dist_metrics=True,
+            control_pert=CONTROL_VAR,
+            pert_col=PERT_COL,
+            celltype_col=CELLTYPE_COL,
+            output_space="gene",
+            shared_perts=None,
+            outdir=OUTDIR,
+            class_score=True,
+            metric="unknown",
+        ).compute()
+
+
 def test_eval():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
@@ -422,6 +445,36 @@ def test_eval_downsampled_cells():
         shared_perts=None,
         outdir=OUTDIR,
         class_score=True,
+    )
+    evaluator.compute()
+
+    for x in np.arange(N_CELLTYPES):
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
+            f"Expected file for downstream DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
+            f"Expected file for predicted DE results missing for celltype: {x}"
+        )
+        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
+            f"Expected file for real DE results missing for celltype: {x}"
+        )
+
+
+def test_eval_alt_metric():
+    adata_real = build_random_anndata()
+    adata_pred = downsample_cells(adata_real, fraction=0.5)
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        include_dist_metrics=True,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        celltype_col=CELLTYPE_COL,
+        output_space="gene",
+        shared_perts=None,
+        outdir=OUTDIR,
+        class_score=True,
+        metric="anderson",
     )
     evaluator.compute()
 

@@ -22,6 +22,7 @@ def parallel_compute_de(
     prefix: str = "",
     n_threads: int = 1,
     batch_size: int = 1000,
+    metric: str = "wilcoxon",
 ):
     """
     Compute differential expression using parallel_differential_expression,
@@ -45,6 +46,8 @@ def parallel_compute_de(
         Number of threads to use for parallel computation, by default 1
     batch_size : int, optional
         Batch size for parallel computation, by default 1000
+    metric: str
+        Metric to use when computing differential expression [wilcoxon, anderson, t-test]
 
     Returns
     -------
@@ -75,6 +78,7 @@ def parallel_compute_de(
         groupby_key=pert_col,
         num_workers=n_threads,
         batch_size=batch_size,
+        metric=metric,
     )
 
     # # Save out the de results

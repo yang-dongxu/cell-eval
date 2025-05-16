@@ -49,6 +49,7 @@ class MetricsEvaluator:
         batch_size: Optional[int] = None,
         skip_normlog_check: bool = False,
         minimal_eval: bool = False,
+        metric: str = "wilcoxon",
     ):
         # Primary data
         # Allow adata to be passed in or read from file
@@ -73,6 +74,7 @@ class MetricsEvaluator:
         self.class_score = class_score
         self.skip_normlog_check = skip_normlog_check
         self.minimal_eval = minimal_eval
+        self.metric = metric
 
         self.n_threads = n_threads if n_threads is not None else mp.cpu_count()
         self.batch_size = batch_size if batch_size is not None else 1000
@@ -349,6 +351,7 @@ class MetricsEvaluator:
             outdir=self.outdir,
             n_threads=self.n_threads,
             batch_size=self.batch_size,
+            metric=self.metric,
         )
 
         # Clustering agreement
