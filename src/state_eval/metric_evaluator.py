@@ -544,10 +544,8 @@ def init_worker(global_pred_df: pd.DataFrame, global_true_df: pd.DataFrame):
     TRUE_DF = global_true_df
 
 
-def compute_downstream_DE_metrics_parallel(target_gene: str, p_value_threshold: float):
-    return compute_downstream_DE_metrics(
-        target_gene, PRED_DF, TRUE_DF, p_value_threshold
-    )
+def compute_downstream_DE_metrics_parallel(target_gene: str, fdr_threshold: float):
+    return compute_downstream_DE_metrics(target_gene, PRED_DF, TRUE_DF, fdr_threshold)
 
 
 def get_downstream_DE_metrics(
@@ -556,7 +554,7 @@ def get_downstream_DE_metrics(
     outdir: str,
     celltype: str,
     n_workers: int = 10,
-    p_value_threshold: float = 0.05,
+    fdr_threshold: float = 0.05,
 ):
     for df in (DE_pred_df, DE_true_df):
         df["abs_fold_change"] = np.abs(df["fold_change"])
@@ -571,7 +569,7 @@ def get_downstream_DE_metrics(
         processes=n_workers, initializer=init_worker, initargs=(DE_pred_df, DE_true_df)
     ) as pool:
         func = partial(
-            compute_downstream_DE_metrics_parallel, p_value_threshold=p_value_threshold
+            compute_downstream_DE_metrics_parallel, fdr_threshold=fdr_threshold
         )
         results = list(tqdm(pool.imap(func, target_genes), total=len(target_genes)))
 
