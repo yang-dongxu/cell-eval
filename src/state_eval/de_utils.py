@@ -174,7 +174,7 @@ def vectorized_sig_genes_fc_sort(
     df["p_value"] = df["p_value"].astype("float32")
     df["abs_fold_change"] = df["abs_fold_change"].astype("float32")
 
-    df = df[df["p_value"] < pvalue_threshold].sort_values(
+    df = df[df["fdr"] < pvalue_threshold].sort_values(
         ["target", "abs_fold_change"], ascending=[True, False]
     )
     df["rank"] = df.groupby("target").cumcount()
