@@ -50,6 +50,7 @@ class MetricsEvaluator:
         skip_normlog_check: bool = False,
         minimal_eval: bool = False,
         metric: str = "wilcoxon",
+        fdr_threshold: float = 0.05,
     ):
         # Primary data
         # Allow adata to be passed in or read from file
@@ -75,6 +76,7 @@ class MetricsEvaluator:
         self.skip_normlog_check = skip_normlog_check
         self.minimal_eval = minimal_eval
         self.metric = metric
+        self.fdr_threshold = fdr_threshold
 
         self.n_threads = n_threads if n_threads is not None else mp.cpu_count()
         self.batch_size = batch_size if batch_size is not None else 1000
@@ -483,7 +485,11 @@ class MetricsEvaluator:
         # Downstream DE analyses
         if not self.minimal_eval:
             get_downstream_DE_metrics(
-                DE_pred_df, DE_true_df, outdir=self.outdir, celltype=celltype
+                DE_pred_df,
+                DE_true_df,
+                outdir=self.outdir,
+                celltype=celltype,
+                fdr_threshold=self.fdr_threshold,
             )
 
     def _compute_class_score(self, celltype: str):
