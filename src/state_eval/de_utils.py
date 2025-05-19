@@ -23,6 +23,7 @@ def parallel_compute_de(
     n_threads: int = 1,
     batch_size: int = 1000,
     metric: str = "wilcoxon",
+    fdr_threshold: float = 0.05,
 ):
     """
     Compute differential expression using parallel_differential_expression,
@@ -48,6 +49,8 @@ def parallel_compute_de(
         Batch size for parallel computation, by default 1000
     metric: str
         Metric to use when computing differential expression [wilcoxon, anderson, t-test]
+    fdr_threshold: float
+        Value to threshold the adjusted p-values with.
 
     Returns
     -------
@@ -107,11 +110,11 @@ def parallel_compute_de(
     de_genes_pval = vectorized_de(de_results, control_pert, sort_by="p_value")
 
     de_genes_pval_fc = vectorized_sig_genes_fc_sort(
-        de_results, control_pert, pvalue_threshold=0.05
+        de_results, control_pert, fdr_threshold=fdr_threshold
     )
 
     de_genes_sig = vectorized_sig_genes_fc_sort(
-        de_results, control_pert, pvalue_threshold=0.05
+        de_results, control_pert, fdr_threshold=fdr_threshold
     )
 
     return de_genes_fc, de_genes_pval, de_genes_pval_fc, de_genes_sig, de_results
@@ -165,7 +168,7 @@ def vectorized_de(de_results, control_pert, sort_by="abs_fold_change"):
 
 
 def vectorized_sig_genes_fc_sort(
-    de_results: pd.DataFrame, control_pert: str, pvalue_threshold: float = 0.05
+    de_results: pd.DataFrame, control_pert: str, fdr_threshold: float = 0.05
 ) -> pd.DataFrame:
     df = de_results[de_results["target"] != control_pert].copy()
     df["abs_fold_change"] = df["fold_change"].abs()
@@ -174,7 +177,7 @@ def vectorized_sig_genes_fc_sort(
     df["p_value"] = df["p_value"].astype("float32")
     df["abs_fold_change"] = df["abs_fold_change"].astype("float32")
 
-    df = df[df["p_value"] < pvalue_threshold].sort_values(
+    df = df[df["fdr"] < fdr_threshold].sort_values(
         ["target", "abs_fold_change"], ascending=[True, False]
     )
     df["rank"] = df.groupby("target").cumcount()
