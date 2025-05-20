@@ -94,6 +94,11 @@ def compute_pearson(pred: np.ndarray, true: np.ndarray, *_args) -> float:
     return float(np.nanmean(corrs))
 
 
+# TODO: merge this with compute_pearson_delta_sep_controls
+#
+# if `pred_ctrl` is None, set `pred_ctrl` = `ctrl`
+#
+# And then use the implementation of compute_pearson_delta_separate_controls
 def compute_pearson_delta(
     pred: np.ndarray, true: np.ndarray, ctrl: np.ndarray, *_args
 ) -> float:
@@ -123,6 +128,7 @@ def compute_pearson_delta_batched(
     return float(pearsonr(pred_de, true_de)[0])
 
 
+# TODO: remove this
 def compute_cosine_similarity(pred: np.ndarray, true: np.ndarray, *_args) -> float:
     """Cosine similarity between pred samples and true centroid."""
     centroid = true.mean(0, keepdims=True)
@@ -335,6 +341,7 @@ def compute_directionality_agreement(
     """Sign direction agreement for overlapping DE genes."""
     matches: Dict[str, float] = {}
     for p in pert_list:
+        # TODO: change to FDR not p_value
         t = DE_true_df[
             (DE_true_df["target"] == p) & (DE_true_df["p_value"] < p_val_thresh)
         ]
@@ -440,11 +447,14 @@ def compute_DE_pca(
 def compute_downstream_DE_metrics(
     target: str, pred_df: pd.DataFrame, true_df: pd.DataFrame, p_val_threshold: float
 ) -> Dict:
+    # TODO: filter on FDR not p-value
     true_sub = true_df[
         (true_df["target"] == target) & (true_df["p_value"] < p_val_threshold)
     ]
     pred_sub = pred_df[pred_df["target"] == target]
     genes = true_sub["feature"].tolist()
+
+    # TODO: rename spearman to DE_spearman_lfc_sig-wrt-real
     res = {
         "target": target,
         "significant_genes_count": len(genes),

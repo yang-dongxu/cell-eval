@@ -309,9 +309,11 @@ class MetricsEvaluator:
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
             pred, true, ctrl_true, ctrl_pred
         )
+        # TODO: REMOVE this
         m[f"pearson_delta_sep_ctrls_{suffix}"] = (
             compute_pearson_delta_separate_controls(pred, true, ctrl_true, ctrl_pred)
         )
+        # TODO: remove this
         m[f"cosine_{suffix}"] = compute_cosine_similarity(
             pred, true, ctrl_true, ctrl_pred
         )
@@ -356,6 +358,7 @@ class MetricsEvaluator:
             metric=self.metric,
         )
 
+        # TODO: will use later - gate behind a separate flag - rename to `clustering_overlap`
         # Clustering agreement
         if not self.minimal_eval:
             clusterer = ClusteringAgreementEvaluator(
@@ -370,6 +373,7 @@ class MetricsEvaluator:
         perts = self.metrics[celltype]["pert"]
         only_perts = [p for p in perts if p != self.control]
 
+        # TODO: remove completely
         # Fold-change overlap
         if not self.minimal_eval:
             fc_overlap = compute_gene_overlap_cross_pert(
@@ -378,6 +382,7 @@ class MetricsEvaluator:
             self.metrics[celltype]["DE_fc"] = [fc_overlap.get(p, 0.0) for p in perts]
             self.metrics[celltype]["DE_fc_avg"] = np.mean(list(fc_overlap.values()))
 
+        # TODO: remove completely
         # P-value overlap
         if not self.minimal_eval:
             pval_overlap = compute_gene_overlap_cross_pert(
@@ -388,6 +393,9 @@ class MetricsEvaluator:
             ]
             self.metrics[celltype]["DE_pval_avg"] = np.mean(list(pval_overlap.values()))
 
+        # TODO: organization is DE_{threshold_case}_{threshold_var}_{sort_var}
+        # TODO: rename to DE_tab_pval_fc_k
+        # TODO: rename to DE_intersection-wrt-real_pval_fc_k
         # pval+fc thresholded at various k
         if not self.minimal_eval:
             for k in (50, 100, 200):
@@ -398,6 +406,7 @@ class MetricsEvaluator:
                 self.metrics[celltype][key] = [overlap.get(p, 0.0) for p in perts]
                 self.metrics[celltype][f"{key}_avg"] = np.mean(list(overlap.values()))
 
+        # TODO: remove unlimited designation since it's just variable length
         # unlimited k
         unlimited = compute_gene_overlap_cross_pert(
             DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=-1
@@ -405,6 +414,8 @@ class MetricsEvaluator:
         self.metrics[celltype]["DE_pval_fc_N"] = [unlimited.get(p, 0.0) for p in perts]
         self.metrics[celltype]["DE_pval_fc_avg_N"] = np.mean(list(unlimited.values()))
 
+        # TODO: rename to DE_intersection-wrt-pred_pval_fc_k
+        # TODO: add in precision@N
         # precision@k
         if not self.minimal_eval:
             for topk in (50, 100, 200):
@@ -430,6 +441,7 @@ class MetricsEvaluator:
                 list(sig_rec.values())
             )
 
+        # TODO: rename to DE_nsig_{real,pred}
         # effect sizes & counts
         if not self.minimal_eval:
             true_counts, pred_counts = compute_sig_gene_counts(
@@ -442,11 +454,14 @@ class MetricsEvaluator:
                 pred_counts.get(p, 0) for p in only_perts
             ]
 
+        # TODO: rename to DE_spearman_nsig-wrt-real
+        # TODO: add function DE_spearman_nsig-wrt-pred
         # Spearman
         if not self.minimal_eval:
             sp = compute_sig_gene_spearman(true_counts, pred_counts, only_perts)
             self.metrics[celltype]["DE_sig_genes_spearman"] = sp
 
+        # TODO: DE_sig_directionality_agreement
         # Directionality
         if not self.minimal_eval:
             dir_match = compute_directionality_agreement(
@@ -459,6 +474,7 @@ class MetricsEvaluator:
                 list(dir_match.values())
             )
 
+        # TODO: rename DE_true_genes to DE_real_genes
         # top-k gene lists
         if not self.minimal_eval:
             pred_list, true_list = [], []
