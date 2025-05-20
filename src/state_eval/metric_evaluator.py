@@ -481,8 +481,8 @@ class MetricsEvaluator:
         score = compute_perturbation_ranking_score(
             ct_pred, ct_real, pert_col=self.pert_col, ctrl_pert=self.control
         )
-        self.metrics[celltype]["perturbation_id"] = score
-        self.metrics[celltype]["perturbation_score"] = 1 - score
+        self.metrics[celltype]["pert_discrimination_id"] = score
+        self.metrics[celltype]["pert_discrimination_score"] = 1 - score
 
     def _finalize_metrics(self):
         """Convert stored dicts into per-celltype DataFrames."""
