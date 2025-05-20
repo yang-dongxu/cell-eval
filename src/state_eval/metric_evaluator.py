@@ -425,7 +425,6 @@ class MetricsEvaluator:
             sp = compute_sig_gene_spearman(true_counts, pred_counts, only_perts)
             self.metrics[celltype]["DE_spearman_nsig-wrt-real"] = sp
 
-        # TODO: DE_sig_directionality_agreement
         # Directionality
         if not self.minimal_eval:
             dir_match = compute_directionality_agreement(
