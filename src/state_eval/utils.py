@@ -93,27 +93,19 @@ def compute_pearson(pred: np.ndarray, true: np.ndarray, *_args) -> float:
             corrs.append(np.corrcoef(pred[i], true[i])[0, 1])
     return float(np.nanmean(corrs))
 
-
-# TODO: merge this with compute_pearson_delta_sep_controls
-#
-# if `pred_ctrl` is None, set `pred_ctrl` = `ctrl`
-#
-# And then use the implementation of compute_pearson_delta_separate_controls
 def compute_pearson_delta(
-    pred: np.ndarray, true: np.ndarray, ctrl: np.ndarray, *_args
+    pred: np.ndarray,
+    true: np.ndarray,
+    ctrl: np.ndarray,
+    pred_ctrl: Optional[np.ndarray] = None,
+    *_args,
 ) -> float:
     """Pearson between mean differences from control."""
-    return float(pearsonr(pred.mean(0) - ctrl.mean(0), true.mean(0) - ctrl.mean(0))[0])
-
-
-def compute_pearson_delta_separate_controls(
-    pred: np.ndarray, true: np.ndarray, ctrl: np.ndarray, pred_ctrl: np.ndarray
-) -> float:
-    """Pearson between pred vs pred_ctrl and true vs ctrl deltas."""
+    if pred_ctrl is None:
+        pred_ctrl = ctrl
     return float(
         pearsonr(pred.mean(0) - pred_ctrl.mean(0), true.mean(0) - ctrl.mean(0))[0]
     )
-
 
 def compute_pearson_delta_batched(
     batched_means: Dict[str, np.ndarray], *_args

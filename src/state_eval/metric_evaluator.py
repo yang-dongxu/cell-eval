@@ -309,10 +309,6 @@ class MetricsEvaluator:
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
             pred, true, ctrl_true, ctrl_pred
         )
-        # TODO: REMOVE this
-        m[f"pearson_delta_sep_ctrls_{suffix}"] = (
-            compute_pearson_delta_separate_controls(pred, true, ctrl_true, ctrl_pred)
-        )
         # TODO: remove this
         m[f"cosine_{suffix}"] = compute_cosine_similarity(
             pred, true, ctrl_true, ctrl_pred
