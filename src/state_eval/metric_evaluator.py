@@ -363,13 +363,10 @@ class MetricsEvaluator:
         perts = self.metrics[celltype]["pert"]
         only_perts = [p for p in perts if p != self.control]
 
-        # TODO: organization is DE_{threshold_case}_{threshold_var}_{sort_var}
-        # TODO: rename to DE_tab_pval_fc_k
-        # TODO: rename to DE_intersection-wrt-real_pval_fc_k
         # pval+fc thresholded at various k
         if not self.minimal_eval:
             for k in (50, 100, 200):
-                key = f"DE_pval_fc_{k}"
+                key = f"DE_intersection-wrt-real_pval_fc_{k}"
                 overlap = compute_gene_overlap_cross_pert(
                     DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=k
                 )
@@ -381,15 +378,14 @@ class MetricsEvaluator:
         unlimited = compute_gene_overlap_cross_pert(
             DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=-1
         )
-        self.metrics[celltype]["DE_pval_fc_N"] = [unlimited.get(p, 0.0) for p in perts]
-        self.metrics[celltype]["DE_pval_fc_avg_N"] = np.mean(list(unlimited.values()))
+        self.metrics[celltype]["DE_intersection-wrt-real_pval_fc_N"] = [unlimited.get(p, 0.0) for p in perts]
+        self.metrics[celltype]["DE_intersection-wrt-real_pval_fc_avg_N"] = np.mean(list(unlimited.values()))
 
-        # TODO: rename to DE_intersection-wrt-pred_pval_fc_k
         # TODO: add in precision@N
         # precision@k
         if not self.minimal_eval:
             for topk in (50, 100, 200):
-                key = f"DE_patk_pval_fc_{topk}"
+                key = f"DE_intersection-wrt-pred_pval_fc_{topk}"
                 patk = compute_gene_overlap_cross_pert(
                     DE_true_pval_fc,
                     DE_pred_pval_fc,
@@ -411,25 +407,23 @@ class MetricsEvaluator:
                 list(sig_rec.values())
             )
 
-        # TODO: rename to DE_nsig_{real,pred}
         # effect sizes & counts
         if not self.minimal_eval:
             true_counts, pred_counts = compute_sig_gene_counts(
                 DE_true_sig_genes, DE_pred_sig_genes, only_perts
             )
-            self.metrics[celltype]["DE_sig_genes_count_true"] = [
+            self.metrics[celltype]["DE_nsig_real"] = [
                 true_counts.get(p, 0) for p in only_perts
             ]
-            self.metrics[celltype]["DE_sig_genes_count_pred"] = [
+            self.metrics[celltype]["DE_nsig_pred"] = [
                 pred_counts.get(p, 0) for p in only_perts
             ]
 
-        # TODO: rename to DE_spearman_nsig-wrt-real
         # TODO: add function DE_spearman_nsig-wrt-pred
         # Spearman
         if not self.minimal_eval:
             sp = compute_sig_gene_spearman(true_counts, pred_counts, only_perts)
-            self.metrics[celltype]["DE_sig_genes_spearman"] = sp
+            self.metrics[celltype]["DE_spearman_nsig-wrt-real"] = sp
 
         # TODO: DE_sig_directionality_agreement
         # Directionality
@@ -437,14 +431,13 @@ class MetricsEvaluator:
             dir_match = compute_directionality_agreement(
                 DE_true_df, DE_pred_df, only_perts
             )
-            self.metrics[celltype]["DE_direction_match"] = [
+            self.metrics[celltype]["DE_sig_direction_match"] = [
                 dir_match.get(p, np.nan) for p in only_perts
             ]
-            self.metrics[celltype]["DE_direction_match_avg"] = np.nanmean(
+            self.metrics[celltype]["DE_sig_direction_match_avg"] = np.nanmean(
                 list(dir_match.values())
             )
 
-        # TODO: rename DE_true_genes to DE_real_genes
         # top-k gene lists
         if not self.minimal_eval:
             pred_list, true_list = [], []
@@ -466,7 +459,7 @@ class MetricsEvaluator:
                     pred_list.append("|".join(preds))
                     true_list.append("|".join(trues))
             self.metrics[celltype]["DE_pred_genes"] = pred_list
-            self.metrics[celltype]["DE_true_genes"] = true_list
+            self.metrics[celltype]["DE_real_genes"] = true_list
 
         # Downstream DE analyses
         if not self.minimal_eval:
