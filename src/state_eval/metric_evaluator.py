@@ -363,26 +363,6 @@ class MetricsEvaluator:
         perts = self.metrics[celltype]["pert"]
         only_perts = [p for p in perts if p != self.control]
 
-        # TODO: remove completely
-        # Fold-change overlap
-        if not self.minimal_eval:
-            fc_overlap = compute_gene_overlap_cross_pert(
-                DE_true_fc, DE_pred_fc, control_pert=self.control, k=50
-            )
-            self.metrics[celltype]["DE_fc"] = [fc_overlap.get(p, 0.0) for p in perts]
-            self.metrics[celltype]["DE_fc_avg"] = np.mean(list(fc_overlap.values()))
-
-        # TODO: remove completely
-        # P-value overlap
-        if not self.minimal_eval:
-            pval_overlap = compute_gene_overlap_cross_pert(
-                DE_true_pval, DE_pred_pval, control_pert=self.control, k=50
-            )
-            self.metrics[celltype]["DE_pval"] = [
-                pval_overlap.get(p, 0.0) for p in perts
-            ]
-            self.metrics[celltype]["DE_pval_avg"] = np.mean(list(pval_overlap.values()))
-
         # TODO: organization is DE_{threshold_case}_{threshold_var}_{sort_var}
         # TODO: rename to DE_tab_pval_fc_k
         # TODO: rename to DE_intersection-wrt-real_pval_fc_k
