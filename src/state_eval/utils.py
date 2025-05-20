@@ -322,14 +322,13 @@ def compute_directionality_agreement(
     DE_true_df: pd.DataFrame,
     DE_pred_df: pd.DataFrame,
     pert_list: Sequence,
-    p_val_thresh: float = 0.05,
+    fdr_threshold: float = 0.05,
 ) -> Dict[str, float]:
     """Sign direction agreement for overlapping DE genes."""
     matches: Dict[str, float] = {}
     for p in pert_list:
-        # TODO: change to FDR not p_value
         t = DE_true_df[
-            (DE_true_df["target"] == p) & (DE_true_df["p_value"] < p_val_thresh)
+            (DE_true_df["target"] == p) & (DE_true_df["fdr"] < fdr_threshold)
         ]
         u = DE_pred_df[DE_pred_df["target"] == p]
         if t.empty or u.empty:
@@ -431,11 +430,10 @@ def compute_DE_pca(
 
 
 def compute_downstream_DE_metrics(
-    target: str, pred_df: pd.DataFrame, true_df: pd.DataFrame, p_val_threshold: float
+    target: str, pred_df: pd.DataFrame, true_df: pd.DataFrame, fdr_threshold: float
 ) -> Dict:
-    # TODO: filter on FDR not p-value
     true_sub = true_df[
-        (true_df["target"] == target) & (true_df["p_value"] < p_val_threshold)
+        (true_df["target"] == target) & (true_df["fdr"] < fdr_threshold)
     ]
     pred_sub = pred_df[pred_df["target"] == target]
     genes = true_sub["feature"].tolist()
@@ -460,12 +458,12 @@ def compute_downstream_DE_metrics(
         res["spearman"] = float(
             spearmanr(merged["fold_change_t"], merged["fold_change_p"])[0]
         )
-    lab = true_sub.assign(label=(true_sub["p_value"] < p_val_threshold).astype(int))
+    lab = true_sub.assign(label=(true_sub["fdr"] < fdr_threshold).astype(int))
     mc = pd.merge(
-        lab[["feature", "label"]], pred_sub[["feature", "p_value"]], on="feature"
+        lab[["feature", "label"]], pred_sub[["feature", "fdr"]], on="feature"
     )
     if 0 < mc["label"].sum() < len(mc):
-        y, scores = mc["label"], -np.log10(mc["p_value"])
+        y, scores = mc["label"], -np.log10(mc["fdr"])
         pr, re, _ = precision_recall_curve(y, scores)
         f, t, _ = roc_curve(y, scores)
         res["pr_auc"], res["roc_auc"] = float(auc(re, pr)), float(auc(f, t))
