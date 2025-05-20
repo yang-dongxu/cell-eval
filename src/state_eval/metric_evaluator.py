@@ -13,7 +13,6 @@ from tqdm.auto import tqdm
 
 from .utils import (
     ClusteringAgreementEvaluator,
-    compute_cosine_similarity,
     compute_DE_for_truth_and_pred,
     compute_directionality_agreement,
     compute_downstream_DE_metrics,
@@ -306,10 +305,6 @@ class MetricsEvaluator:
         m = {}
 
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
-            pred, true, ctrl_true, ctrl_pred
-        )
-        # TODO: remove this
-        m[f"cosine_{suffix}"] = compute_cosine_similarity(
             pred, true, ctrl_true, ctrl_pred
         )
         m["membership_real"] = true.shape[0]

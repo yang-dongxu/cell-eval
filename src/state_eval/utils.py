@@ -93,6 +93,7 @@ def compute_pearson(pred: np.ndarray, true: np.ndarray, *_args) -> float:
             corrs.append(np.corrcoef(pred[i], true[i])[0, 1])
     return float(np.nanmean(corrs))
 
+
 def compute_pearson_delta(
     pred: np.ndarray,
     true: np.ndarray,
@@ -107,6 +108,7 @@ def compute_pearson_delta(
         pearsonr(pred.mean(0) - pred_ctrl.mean(0), true.mean(0) - ctrl.mean(0))[0]
     )
 
+
 def compute_pearson_delta_batched(
     batched_means: Dict[str, np.ndarray], *_args
 ) -> float:
@@ -118,14 +120,6 @@ def compute_pearson_delta_batched(
         batched_means["pert_true"] - batched_means["ctrl_true"]
     ).mean(0)
     return float(pearsonr(pred_de, true_de)[0])
-
-
-# TODO: remove this
-def compute_cosine_similarity(pred: np.ndarray, true: np.ndarray, *_args) -> float:
-    """Cosine similarity between pred samples and true centroid."""
-    centroid = true.mean(0, keepdims=True)
-    sims = cosine_similarity(pred, centroid)
-    return float(sims.mean())
 
 
 def get_top_k_de(adata: ad.AnnData, k: int) -> list:
