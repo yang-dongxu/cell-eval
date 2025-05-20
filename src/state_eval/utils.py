@@ -438,11 +438,10 @@ def compute_downstream_DE_metrics(
     pred_sub = pred_df[pred_df["target"] == target]
     genes = true_sub["feature"].tolist()
 
-    # TODO: rename spearman to DE_spearman_lfc_sig-wrt-real
     res = {
         "target": target,
         "significant_genes_count": len(genes),
-        "spearman": np.nan,
+        "DE_spearman_lfc_sig-wrt-real": np.nan,
         "pr_auc": np.nan,
         "roc_auc": np.nan,
     }
@@ -455,7 +454,7 @@ def compute_downstream_DE_metrics(
         suffixes=("_t", "_p"),
     )
     if len(merged) > 1:
-        res["spearman"] = float(
+        res["DE_spearman_lfc_sig-wrt-real"] = float(
             spearmanr(merged["fold_change_t"], merged["fold_change_p"])[0]
         )
     lab = true_sub.assign(label=(true_sub["fdr"] < fdr_threshold).astype(int))
