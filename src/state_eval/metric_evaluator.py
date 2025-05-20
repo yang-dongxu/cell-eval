@@ -272,13 +272,13 @@ class MetricsEvaluator:
     ):
         """Compute metrics for a specific perturbation and cell type."""
         idx_pred = pred_groups.get(pert, np.array([]))
-        idx_true = real_groups.get(pert, np.array([]))
-        if idx_pred.size == 0 or idx_true.size == 0:
+        idx_real = real_groups.get(pert, np.array([]))
+        if idx_pred.size == 0 or idx_real.size == 0:
             return
 
         # Extract X arrays and ensure dense
         Xp = to_dense(self.adata_pred[idx_pred].X)
-        Xt = to_dense(self.adata_real[idx_true].X)
+        Xt = to_dense(self.adata_real[idx_real].X)
         Xc_t = to_dense(real_ctrl.X)
         Xc_p = to_dense(pred_ctrl.X)
 
@@ -293,8 +293,8 @@ class MetricsEvaluator:
     def _compute_basic_metrics(
         self,
         pred: np.ndarray,
-        true: np.ndarray,
-        ctrl_true: np.ndarray,
+        real: np.ndarray,
+        ctrl_real: np.ndarray,
         ctrl_pred: np.ndarray,
         suffix: str = "",
     ):
@@ -305,9 +305,9 @@ class MetricsEvaluator:
         m = {}
 
         m[f"pearson_delta_{suffix}"] = compute_pearson_delta(
-            pred, true, ctrl_true, ctrl_pred
+            pred, real, ctrl_real, ctrl_pred
         )
-        m["membership_real"] = true.shape[0]
+        m["membership_real"] = real.shape[0]
         m["membership_pred"] = pred.shape[0]
         return m
 
@@ -324,15 +324,15 @@ class MetricsEvaluator:
 
         # Perform DE
         (
-            DE_true_fc,
+            DE_real_fc,
             DE_pred_fc,
-            DE_true_pval,
+            DE_real_pval,
             DE_pred_pval,
-            DE_true_pval_fc,
+            DE_real_pval_fc,
             DE_pred_pval_fc,
-            DE_true_sig_genes,
+            DE_real_sig_genes,
             DE_pred_sig_genes,
-            DE_true_df,
+            DE_real_df,
             DE_pred_df,
         ) = compute_DE_for_truth_and_pred(
             real_ct,
@@ -368,7 +368,7 @@ class MetricsEvaluator:
             for k in (50, 100, 200):
                 key = f"DE_intersection-wrt-real_pval_fc_{k}"
                 overlap = compute_gene_overlap_cross_pert(
-                    DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=k
+                    DE_real_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=k
                 )
                 self.metrics[celltype][key] = [overlap.get(p, 0.0) for p in perts]
                 self.metrics[celltype][f"{key}_avg"] = np.mean(list(overlap.values()))
@@ -376,7 +376,7 @@ class MetricsEvaluator:
         # TODO: remove unlimited designation since it's just variable length
         # unlimited k
         unlimited = compute_gene_overlap_cross_pert(
-            DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=-1
+            DE_real_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=-1
         )
         self.metrics[celltype]["DE_intersection-wrt-real_pval_fc_N"] = [
             unlimited.get(p, 0.0) for p in perts
@@ -391,7 +391,7 @@ class MetricsEvaluator:
             for topk in (50, 100, 200):
                 key = f"DE_intersection-wrt-pred_pval_fc_{topk}"
                 patk = compute_gene_overlap_cross_pert(
-                    DE_true_pval_fc,
+                    DE_real_pval_fc,
                     DE_pred_pval_fc,
                     control_pert=self.control,
                     topk=topk,
@@ -402,7 +402,7 @@ class MetricsEvaluator:
         # recall of significant genes
         if not self.minimal_eval:
             sig_rec = compute_gene_overlap_cross_pert(
-                DE_true_sig_genes, DE_pred_sig_genes, control_pert=self.control
+                DE_real_sig_genes, DE_pred_sig_genes, control_pert=self.control
             )
             self.metrics[celltype]["DE_sig_genes_recall"] = [
                 sig_rec.get(p, 0.0) for p in perts
@@ -413,11 +413,11 @@ class MetricsEvaluator:
 
         # effect sizes & counts
         if not self.minimal_eval:
-            true_counts, pred_counts = compute_sig_gene_counts(
-                DE_true_sig_genes, DE_pred_sig_genes, only_perts
+            real_counts, pred_counts = compute_sig_gene_counts(
+                DE_real_sig_genes, DE_pred_sig_genes, only_perts
             )
             self.metrics[celltype]["DE_nsig_real"] = [
-                true_counts.get(p, 0) for p in only_perts
+                real_counts.get(p, 0) for p in only_perts
             ]
             self.metrics[celltype]["DE_nsig_pred"] = [
                 pred_counts.get(p, 0) for p in only_perts
@@ -426,13 +426,13 @@ class MetricsEvaluator:
         # TODO: add function DE_spearman_nsig-wrt-pred
         # Spearman
         if not self.minimal_eval:
-            sp = compute_sig_gene_spearman(true_counts, pred_counts, only_perts)
+            sp = compute_sig_gene_spearman(real_counts, pred_counts, only_perts)
             self.metrics[celltype]["DE_spearman_nsig-wrt-real"] = sp
 
         # Directionality
         if not self.minimal_eval:
             dir_match = compute_directionality_agreement(
-                DE_true_df, DE_pred_df, only_perts
+                DE_real_df, DE_pred_df, only_perts
             )
             self.metrics[celltype]["DE_sig_direction_match"] = [
                 dir_match.get(p, np.nan) for p in only_perts
@@ -443,32 +443,32 @@ class MetricsEvaluator:
 
         # top-k gene lists
         if not self.minimal_eval:
-            pred_list, true_list = [], []
+            pred_list, real_list = [], []
             for p in perts:
                 if p == self.control:
                     pred_list.append("")
-                    true_list.append("")
+                    real_list.append("")
                 else:
                     preds = (
                         list(DE_pred_pval.loc[p].values)
                         if p in DE_pred_pval.index
                         else []
                     )
-                    trues = (
-                        list(DE_true_pval.loc[p].values)
-                        if p in DE_true_pval.index
+                    reals = (
+                        list(DE_real_pval.loc[p].values)
+                        if p in DE_real_pval.index
                         else []
                     )
                     pred_list.append("|".join(preds))
-                    true_list.append("|".join(trues))
+                    real_list.append("|".join(reals))
             self.metrics[celltype]["DE_pred_genes"] = pred_list
-            self.metrics[celltype]["DE_real_genes"] = true_list
+            self.metrics[celltype]["DE_real_genes"] = real_list
 
         # Downstream DE analyses
         if not self.minimal_eval:
             get_downstream_DE_metrics(
                 DE_pred_df,
-                DE_true_df,
+                DE_real_df,
                 outdir=self.outdir,
                 celltype=celltype,
                 fdr_threshold=self.fdr_threshold,
@@ -525,11 +525,11 @@ class MetricsEvaluator:
         return pd.concat(frames)
 
 
-def init_worker(global_pred_df: pd.DataFrame, global_true_df: pd.DataFrame):
+def init_worker(global_pred_df: pd.DataFrame, global_real_df: pd.DataFrame):
     global PRED_DF
     global TRUE_DF
     PRED_DF = global_pred_df
-    TRUE_DF = global_true_df
+    TRUE_DF = global_real_df
 
 
 def compute_downstream_DE_metrics_parallel(target_gene: str, fdr_threshold: float):
@@ -538,23 +538,23 @@ def compute_downstream_DE_metrics_parallel(target_gene: str, fdr_threshold: floa
 
 def get_downstream_DE_metrics(
     DE_pred_df: pd.DataFrame,
-    DE_true_df: pd.DataFrame,
+    DE_real_df: pd.DataFrame,
     outdir: str,
     celltype: str,
     n_workers: int = 10,
     fdr_threshold: float = 0.05,
 ):
-    for df in (DE_pred_df, DE_true_df):
+    for df in (DE_pred_df, DE_real_df):
         df["abs_fold_change"] = np.abs(df["fold_change"])
         with np.errstate(divide="ignore"):
             df["log_fold_change"] = np.log10(df["fold_change"])
         df.replace([np.inf, -np.inf], np.nan, inplace=True)
         df["abs_log_fold_change"] = np.abs(df["log_fold_change"].fillna(0))
 
-    target_genes = DE_true_df["target"].unique()
+    target_genes = DE_real_df["target"].unique()
 
     with mp.Pool(
-        processes=n_workers, initializer=init_worker, initargs=(DE_pred_df, DE_true_df)
+        processes=n_workers, initializer=init_worker, initargs=(DE_pred_df, DE_real_df)
     ) as pool:
         func = partial(
             compute_downstream_DE_metrics_parallel, fdr_threshold=fdr_threshold
