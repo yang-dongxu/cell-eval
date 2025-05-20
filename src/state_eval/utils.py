@@ -432,9 +432,7 @@ def compute_DE_pca(
 def compute_downstream_DE_metrics(
     target: str, pred_df: pd.DataFrame, true_df: pd.DataFrame, fdr_threshold: float
 ) -> Dict:
-    true_sub = true_df[
-        (true_df["target"] == target) & (true_df["fdr"] < fdr_threshold)
-    ]
+    true_sub = true_df[(true_df["target"] == target) & (true_df["fdr"] < fdr_threshold)]
     pred_sub = pred_df[pred_df["target"] == target]
     genes = true_sub["feature"].tolist()
 
@@ -458,9 +456,7 @@ def compute_downstream_DE_metrics(
             spearmanr(merged["fold_change_t"], merged["fold_change_p"])[0]
         )
     lab = true_sub.assign(label=(true_sub["fdr"] < fdr_threshold).astype(int))
-    mc = pd.merge(
-        lab[["feature", "label"]], pred_sub[["feature", "fdr"]], on="feature"
-    )
+    mc = pd.merge(lab[["feature", "label"]], pred_sub[["feature", "fdr"]], on="feature")
     if 0 < mc["label"].sum() < len(mc):
         y, scores = mc["label"], -np.log10(mc["fdr"])
         pr, re, _ = precision_recall_curve(y, scores)

@@ -378,8 +378,12 @@ class MetricsEvaluator:
         unlimited = compute_gene_overlap_cross_pert(
             DE_true_pval_fc, DE_pred_pval_fc, control_pert=self.control, k=-1
         )
-        self.metrics[celltype]["DE_intersection-wrt-real_pval_fc_N"] = [unlimited.get(p, 0.0) for p in perts]
-        self.metrics[celltype]["DE_intersection-wrt-real_pval_fc_avg_N"] = np.mean(list(unlimited.values()))
+        self.metrics[celltype]["DE_intersection-wrt-real_pval_fc_N"] = [
+            unlimited.get(p, 0.0) for p in perts
+        ]
+        self.metrics[celltype]["DE_intersection-wrt-real_pval_fc_avg_N"] = np.mean(
+            list(unlimited.values())
+        )
 
         # TODO: add in precision@N
         # precision@k
