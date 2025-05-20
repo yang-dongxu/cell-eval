@@ -19,7 +19,6 @@ from .utils import (
     compute_downstream_DE_metrics,
     compute_gene_overlap_cross_pert,
     compute_pearson_delta,
-    compute_pearson_delta_separate_controls,
     compute_perturbation_ranking_score,
     compute_sig_gene_counts,
     compute_sig_gene_spearman,
