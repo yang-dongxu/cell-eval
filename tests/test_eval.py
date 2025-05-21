@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from scipy.sparse import csr_matrix
 
-from state_eval import MetricsEvaluator
+from vc_eval import MetricsEvaluator
 
 PERT_COL = "perturbation"
 CELLTYPE_COL = "celltype"

@@ -1,4 +1,4 @@
-# state-eval
+# vc-eval
 
 Set config parameters in `eval_config.yaml`
 
@@ -14,11 +14,11 @@ Distribution with [`uv`](https://docs.astral.sh/uv/)
 
 ```bash
 # install from github directly
-uv pip install git+ssh://github.com/arcinstitute/state-eval
+uv pip install git+ssh://github.com/arcinstitute/vc-eval
 
 # install from source
-git clone ssh://github.com/arcinstitute/state-eval
-cd state-eval
+git clone ssh://github.com/arcinstitute/vc-eval
+cd vc-eval
 uv pip install -e .
 ```
 
