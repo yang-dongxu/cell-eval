@@ -170,9 +170,24 @@ def vectorized_de(de_results, control_pert, sort_by="abs_fold_change"):
 def vectorized_sig_genes_fc_sort(
     de_results: pd.DataFrame, control_pert: str, fdr_threshold: float = 0.05
 ) -> pd.DataFrame:
+    """Sort the DEGs by absolute fold change *after* subsetting to significant genes.
+
+    Parameters
+    ==========
+    de_results: pd.DataFrame
+        A differential expression table
+    control_pert: str
+        The name of the control key in the perturbation table
+    fdr_threshold: float
+        The maximum FDR to accept as a significant DEG
+
+    Returns
+    =======
+    pd.DataFrame
+        Returns a pivoted DEG table sorted by fold-change and filtered by significance.
+    """
     df = de_results[de_results["target"] != control_pert].copy()
-    df["abs_fold_change"] = df["fold_change"].abs()
-    df["abs_fold_change"] = df["abs_fold_change"].fillna(1)
+    df["abs_fold_change"] = df["fold_change"].abs().fillna(0)
 
     df["p_value"] = df["p_value"].astype("float32")
     df["abs_fold_change"] = df["abs_fold_change"].astype("float32")
