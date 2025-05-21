@@ -4,9 +4,9 @@ version = "0.3.0"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
 authors = [
-    { name = "Abhinav Adduri", email = "abhinav.adduri@arcinsistute.org" },
-    { name = "Yusuf Roohani", email = "yusuf.roohani@arcinsistute.org" },
-    { name = "Noam Teyssier", email = "noam.teyssier@arcinsistute.org" },
+    { name = "Abhinav Adduri", email = "abhinav.adduri@arcinstitute.org" },
+    { name = "Yusuf Roohani", email = "yusuf.roohani@arcinstitute.org" },
+    { name = "Noam Teyssier", email = "noam.teyssier@arcinstitute.org" },
 ]
 requires-python = ">=3.10,<3.13"
 dependencies = [
