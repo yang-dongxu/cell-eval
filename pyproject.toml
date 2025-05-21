@@ -1,5 +1,5 @@
 [project]
-name = "state-eval"
+name = "vc-eval"
 version = "0.2.1"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
