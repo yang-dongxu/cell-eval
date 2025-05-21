@@ -46,7 +46,7 @@ def build_random_anndata(
 
     # Normalize and log transform if required
     if normlog:
-        matrix = int(normlog) * (matrix / matrix.sum(axis=1).reshape(-1, 1))
+        matrix = matrix / matrix.sum(axis=1, keepdims=True) * normtotal
         matrix = np.log1p(matrix)
 
     # Convert to sparse if required
