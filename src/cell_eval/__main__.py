@@ -120,6 +120,7 @@ def run_evaluation(args: argparse.ArgumentParser):
             n_threads=config["n_threads"] if "n_threads" in config else None,
             batch_size=config["batch_size"] if "batch_size" in config else None,
             metric=config["metric"] if "metric" in config else "wilcoxon",
+            skip_normlog_check=config.get("skip_normlog_check", False),
         )
     else:
         print(args)
