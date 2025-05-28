@@ -287,6 +287,25 @@ def test_eval_simple():
     evaluator.compute()
 
 
+def test_eval_missing_celltype_col():
+    adata_real = build_random_anndata()
+    adata_pred = downsample_cells(adata_real, fraction=0.5)
+
+    adata_real.obs.drop(columns="celltype", inplace=True)
+    adata_pred.obs.drop(columns="celltype", inplace=True)
+
+    assert "celltype" not in adata_real.obs.columns
+    assert "celltype" not in adata_pred.obs.columns
+
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        control_pert="control",
+        pert_col="perturbation",
+    )
+    evaluator.compute()
+
+
 def test_eval():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()

@@ -3,7 +3,7 @@ import os
 import sys
 from collections import defaultdict
 from functools import partial
-from typing import Optional, Union
+from typing import Union
 
 import anndata as ad
 import numpy as np
@@ -24,27 +24,29 @@ from .utils import (
     to_dense,
 )
 
+DEFAULT_DUMMY_CELLTYPE_COL = "dummy_celltype"
+
 
 class MetricsEvaluator:
     def __init__(
         self,
-        adata_pred: Optional[ad.AnnData] = None,
-        adata_real: Optional[ad.AnnData] = None,
-        path_pred: Optional[str] = None,
-        path_real: Optional[str] = None,
-        embed_key: Optional[str] = None,
+        adata_pred: ad.AnnData | None = None,
+        adata_real: ad.AnnData | None = None,
+        path_pred: str | None = None,
+        path_real: str | None = None,
+        embed_key: str | None = None,
         include_dist_metrics: bool = False,
         control_pert: str = "non-targeting",
         pert_col: str = "pert_name",
-        celltype_col: str = "celltype_name",
+        celltype_col: str | None = None,
         batch_col: str = "gem_group",
         output_space: str = "gene",
-        shared_perts: Optional[list[str]] = None,
+        shared_perts: list[str] | None = None,
         outdir: str = "./cell-eval-outdir",
         de_metric: bool = True,
         class_score: bool = True,
-        n_threads: Optional[int] = None,
-        batch_size: Optional[int] = None,
+        n_threads: int | None = None,
+        batch_size: int | None = None,
         skip_normlog_check: bool = False,
         minimal_eval: bool = False,
         metric: str = "wilcoxon",
@@ -64,7 +66,7 @@ class MetricsEvaluator:
         self.include_dist = include_dist_metrics
         self.control = control_pert
         self.pert_col = pert_col
-        self.celltype_col = celltype_col
+        self.celltype_col = celltype_col if celltype_col else DEFAULT_DUMMY_CELLTYPE_COL
         self.batch_col = batch_col
         self.output_space = output_space
         self.shared_perts = set(shared_perts) if shared_perts else None
@@ -156,23 +158,29 @@ class MetricsEvaluator:
     def _validate_perturbation_columns(self):
         """Validate that the provided perturbation column is in each anndata."""
         assert self.pert_col in self.adata_pred.obs.columns, (
-            f"Perturbation column '{self.pert_col}' not found in pred anndata"
+            f"Perturbation column '{self.pert_col}' not found in pred anndata: {self.adata_pred.obs.columns}"
         )
         assert self.pert_col in self.adata_real.obs.columns, (
-            f"Perturbation column '{self.pert_col}' not found in real anndata"
+            f"Perturbation column '{self.pert_col}' not found in real anndata: {self.adata_real.obs.columns}"
         )
 
     def _validate_control_in_perturbation_columns(self):
         """Validate that that provided control exists in the perturbation columns."""
-        assert self.control in self.adata_pred.obs[self.pert_col].unique(), (
-            f"Control '{self.control}' not found in pred anndata perturbation column"
+        pred_unique = self.adata_pred.obs[self.pert_col].unique()
+        real_unique = self.adata_real.obs[self.pert_col].unique()
+        assert self.control in pred_unique, (
+            f"Control '{self.control}' not found in pred anndata perturbation column: {pred_unique}"
         )
-        assert self.control in self.adata_real.obs[self.pert_col].unique(), (
-            f"Control '{self.control}' not found in real anndata perturbation column"
+        assert self.control in real_unique, (
+            f"Control '{self.control}' not found in real anndata perturbation column: {real_unique}"
         )
 
     def _validate_celltype_column(self):
         """Validate that the celltype column exists in the anndata."""
+        if self.celltype_col == DEFAULT_DUMMY_CELLTYPE_COL:
+            """No need to validate celltype col if not provided - add the column as a literal"""
+            self.adata_pred.obs[DEFAULT_DUMMY_CELLTYPE_COL] = "celltype"
+            self.adata_real.obs[DEFAULT_DUMMY_CELLTYPE_COL] = "celltype"
         assert self.celltype_col in self.adata_pred.obs.columns, (
             f"Celltype column '{self.celltype_col}' not found in pred anndata"
         )
@@ -493,7 +501,7 @@ class MetricsEvaluator:
 
     def save_metrics_per_celltype(
         self,
-        metrics: Optional[dict[str, pd.DataFrame]] = None,
+        metrics: dict[str, pd.DataFrame] | None = None,
         average: bool = False,
         write_csv: bool = True,
     ) -> pd.DataFrame:
