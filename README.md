@@ -1,4 +1,4 @@
-# vc-eval
+# cell-eval
 
 Set config parameters in `eval_config.yaml`
 
@@ -14,11 +14,11 @@ Distribution with [`uv`](https://docs.astral.sh/uv/)
 
 ```bash
 # install from github directly
-uv pip install git+ssh://github.com/arcinstitute/vc-eval
+uv pip install git+ssh://github.com/arcinstitute/cell-eval
 
 # install from source
-git clone ssh://github.com/arcinstitute/vc-eval
-cd vc-eval
+git clone ssh://github.com/arcinstitute/cell-eval
+cd cell-eval
 uv pip install -e .
 ```
 
@@ -37,11 +37,11 @@ uv run run_eval \
 
 ### Module Usage
 
-You can access evaluation programmatically using the `vc_eval` module.
+You can access evaluation programmatically using the `cell_eval` module.
 
 ```python
-from vc_eval import MetricsEvaluator
-from vc_eval.data import build_random_anndata, downsample_cells
+from cell_eval import MetricsEvaluator
+from cell_eval.data import build_random_anndata, downsample_cells
 
 adata_real = build_random_anndata()
 adata_pred = downsample_cells(adata_real, fraction=0.5)

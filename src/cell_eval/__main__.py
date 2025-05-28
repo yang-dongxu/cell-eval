@@ -13,19 +13,19 @@ def parse_args():
     parser.add_argument(
         "--adata_pred",
         type=str,
-        default="/home/yhr/vc-eval/adata_pred_subset.h5ad",
+        default="/home/yhr/cell-eval/adata_pred_subset.h5ad",
         help="Path to the predicted adata object to evaluate",
     )
     parser.add_argument(
         "--adata_true",
         type=str,
-        default="/home/yhr/vc-eval/adata_real_subset.h5ad",
+        default="/home/yhr/cell-eval/adata_real_subset.h5ad",
         help="Path to the true adata object to evaluate against",
     )
     parser.add_argument(
         "--eval_config",
         type=str,
-        default="/home/yhr/vc-eval/config/eval_config.yaml",
+        default="/home/yhr/cell-eval/config/eval_config.yaml",
         help="If set, will load the config.yaml file from the output_dir and use it to set up the model.",
     )
     return parser.parse_args()
