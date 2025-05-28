@@ -40,7 +40,7 @@ class MetricsEvaluator:
         batch_col: str = "gem_group",
         output_space: str = "gene",
         shared_perts: Optional[list[str]] = None,
-        outdir: str = "./vc-eval-outdir",
+        outdir: str = "./cell-eval-outdir",
         de_metric: bool = True,
         class_score: bool = True,
         n_threads: Optional[int] = None,

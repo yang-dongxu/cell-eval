@@ -3,8 +3,8 @@ import os
 import numpy as np
 import pytest
 
-from vc_eval import MetricsEvaluator
-from vc_eval.data import (
+from cell_eval import MetricsEvaluator
+from cell_eval.data import (
     CELLTYPE_COL,
     CONTROL_VAR,
     N_CELLTYPES,
