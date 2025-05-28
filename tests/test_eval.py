@@ -286,6 +286,7 @@ def test_eval_simple():
     )
     evaluator.compute()
 
+
 def test_eval_missing_celltype_col():
     adata_real = build_random_anndata()
     adata_pred = downsample_cells(adata_real, fraction=0.5)
