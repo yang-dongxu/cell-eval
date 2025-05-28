@@ -123,8 +123,6 @@ def run_evaluation(args: argparse.ArgumentParser):
             skip_normlog_check=config.get("skip_normlog_check", False),
         )
     else:
-        print(args)
-
         evaluator = MetricsEvaluator(
             path_pred=args.adata_pred,
             path_real=args.adata_real,
