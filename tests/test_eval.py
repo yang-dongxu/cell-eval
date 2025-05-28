@@ -15,7 +15,6 @@ from cell_eval.data import (
 
 OUTDIR = "TEST_OUTPUT_DIRECTORY"
 
-
 def test_missing_adata_input_vars():
     adata_real = build_random_anndata(normlog=False)
 
