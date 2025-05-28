@@ -3,7 +3,7 @@ import os
 import sys
 from collections import defaultdict
 from functools import partial
-from typing import Optional, Union
+from typing import Union
 
 import anndata as ad
 import numpy as np
@@ -28,23 +28,23 @@ from .utils import (
 class MetricsEvaluator:
     def __init__(
         self,
-        adata_pred: Optional[ad.AnnData] = None,
-        adata_real: Optional[ad.AnnData] = None,
-        path_pred: Optional[str] = None,
-        path_real: Optional[str] = None,
-        embed_key: Optional[str] = None,
+        adata_pred: ad.AnnData | None = None,
+        adata_real: ad.AnnData | None = None,
+        path_pred: str | None = None,
+        path_real: str | None = None,
+        embed_key: str | None = None,
         include_dist_metrics: bool = False,
         control_pert: str = "non-targeting",
         pert_col: str = "pert_name",
         celltype_col: str = "celltype_name",
         batch_col: str = "gem_group",
         output_space: str = "gene",
-        shared_perts: Optional[list[str]] = None,
+        shared_perts: list[str] | None = None,
         outdir: str = "./cell-eval-outdir",
         de_metric: bool = True,
         class_score: bool = True,
-        n_threads: Optional[int] = None,
-        batch_size: Optional[int] = None,
+        n_threads: int | None = None,
+        batch_size: int | None = None,
         skip_normlog_check: bool = False,
         minimal_eval: bool = False,
         metric: str = "wilcoxon",
@@ -493,7 +493,7 @@ class MetricsEvaluator:
 
     def save_metrics_per_celltype(
         self,
-        metrics: Optional[dict[str, pd.DataFrame]] = None,
+        metrics: dict[str, pd.DataFrame] | None = None,
         average: bool = False,
         write_csv: bool = True,
     ) -> pd.DataFrame:
