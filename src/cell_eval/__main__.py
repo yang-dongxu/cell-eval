@@ -13,12 +13,14 @@ def parse_args():
         "--adata-pred",
         type=str,
         help="Path to the predicted adata object to evaluate",
+        required=True,
     )
     parser.add_argument(
         "-r",
         "--adata-real",
         type=str,
         help="Path to the real adata object to evaluate against",
+        required=True,
     )
     parser.add_argument(
         "--control-pert",
@@ -123,8 +125,6 @@ def run_evaluation(args: argparse.ArgumentParser):
             skip_normlog_check=config.get("skip_normlog_check", False),
         )
     else:
-        print(args)
-
         evaluator = MetricsEvaluator(
             path_pred=args.adata_pred,
             path_real=args.adata_real,
