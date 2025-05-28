@@ -13,12 +13,14 @@ def parse_args():
         "--adata-pred",
         type=str,
         help="Path to the predicted adata object to evaluate",
+        required=True,
     )
     parser.add_argument(
         "-r",
         "--adata-real",
         type=str,
         help="Path to the real adata object to evaluate against",
+        required=True,
     )
     parser.add_argument(
         "--control-pert",
