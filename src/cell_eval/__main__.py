@@ -90,7 +90,7 @@ def parse_args():
     parser.add_argument(
         "--config",
         type=str,
-        help="If set, will load the config.yaml file from the output_dir and use it to set up the model. Note that CLI arguments are ignored if this is used",
+        help="Sets all options via yaml - ignores CLI if used",
     )
     return parser.parse_args()
 
