@@ -24,6 +24,8 @@ from .utils import (
     to_dense,
 )
 
+DEFAULT_DUMMY_CELLTYPE_COL = "dummy_celltype"
+
 
 class MetricsEvaluator:
     def __init__(
@@ -36,7 +38,7 @@ class MetricsEvaluator:
         include_dist_metrics: bool = False,
         control_pert: str = "non-targeting",
         pert_col: str = "pert_name",
-        celltype_col: str = "celltype_name",
+        celltype_col: str | None = None,
         batch_col: str = "gem_group",
         output_space: str = "gene",
         shared_perts: list[str] | None = None,
@@ -64,7 +66,7 @@ class MetricsEvaluator:
         self.include_dist = include_dist_metrics
         self.control = control_pert
         self.pert_col = pert_col
-        self.celltype_col = celltype_col
+        self.celltype_col = celltype_col if celltype_col else DEFAULT_DUMMY_CELLTYPE_COL
         self.batch_col = batch_col
         self.output_space = output_space
         self.shared_perts = set(shared_perts) if shared_perts else None
@@ -173,6 +175,10 @@ class MetricsEvaluator:
 
     def _validate_celltype_column(self):
         """Validate that the celltype column exists in the anndata."""
+        if self.celltype_col == DEFAULT_DUMMY_CELLTYPE_COL:
+            """No need to validate celltype col if not provided - add the column as a literal"""
+            self.adata_pred.obs[DEFAULT_DUMMY_CELLTYPE_COL] = "celltype"
+            self.adata_real.obs[DEFAULT_DUMMY_CELLTYPE_COL] = "celltype"
         assert self.celltype_col in self.adata_pred.obs.columns, (
             f"Celltype column '{self.celltype_col}' not found in pred anndata"
         )
