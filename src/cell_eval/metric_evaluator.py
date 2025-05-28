@@ -158,19 +158,21 @@ class MetricsEvaluator:
     def _validate_perturbation_columns(self):
         """Validate that the provided perturbation column is in each anndata."""
         assert self.pert_col in self.adata_pred.obs.columns, (
-            f"Perturbation column '{self.pert_col}' not found in pred anndata"
+            f"Perturbation column '{self.pert_col}' not found in pred anndata: {self.adata_pred.obs.columns}"
         )
         assert self.pert_col in self.adata_real.obs.columns, (
-            f"Perturbation column '{self.pert_col}' not found in real anndata"
+            f"Perturbation column '{self.pert_col}' not found in real anndata: {self.adata_real.obs.columns}"
         )
 
     def _validate_control_in_perturbation_columns(self):
         """Validate that that provided control exists in the perturbation columns."""
-        assert self.control in self.adata_pred.obs[self.pert_col].unique(), (
-            f"Control '{self.control}' not found in pred anndata perturbation column"
+        pred_unique = self.adata_pred.obs[self.pert_col].unique()
+        real_unique = self.adata_real.obs[self.pert_col].unique()
+        assert self.control in pred_unique, (
+            f"Control '{self.control}' not found in pred anndata perturbation column: {pred_unique}"
         )
-        assert self.control in self.adata_real.obs[self.pert_col].unique(), (
-            f"Control '{self.control}' not found in real anndata perturbation column"
+        assert self.control in real_unique, (
+            f"Control '{self.control}' not found in real anndata perturbation column: {real_unique}"
         )
 
     def _validate_celltype_column(self):
