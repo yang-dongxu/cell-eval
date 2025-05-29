@@ -498,17 +498,50 @@ def compute_perturbation_ranking_score(
     pert_col: str = "gene",
     ctrl_pert: str = "non-targeting",
 ) -> float:
+    # Calculate mean perturbation effect across real and predicted
     me_r = compute_mean_perturbation_effect(adata_real, pert_col, ctrl_pert)
     me_p = compute_mean_perturbation_effect(adata_pred, pert_col, ctrl_pert)
+
+    # determine perturbation names
     perts = me_r.index.values
+
+    # determine gene names
+    gene_names = adata_real.var_names.values
+
     ranks = []
+
+    n_skip = 0
     for p in perts:
+        # skip control
+        if p == ctrl_pert:
+            n_skip += 1
+            continue
+
+        # determine all non-target genes
+        include_mask = np.flatnonzero(gene_names != p)
+
+        # select real and pred
+        subset_mean_real = me_r.loc[p].values.reshape(1, -1)
+        subset_mean_pred = me_p.values
+
+        # evaluate similarity
         sim = cosine_similarity(
-            me_r.loc[p].values.reshape(1, -1), me_p.values
+            subset_mean_real[:, include_mask],
+            subset_mean_pred[:, include_mask],
         ).flatten()
-        rank = np.where(np.argsort(sim)[::-1] == np.where(perts == p)[0][0])[0][0]
+
+        # sort by ascending similarity
+        sorted_rev = np.argsort(sim)[::-1]
+
+        # determine true perturbation index
+        p_index = np.flatnonzero(perts == p)[0]
+
+        # calculate rank
+        rank = np.flatnonzero(sorted_rev == p_index)[0]
+
         ranks.append(rank)
-    return float(np.mean(ranks) / len(perts))
+
+    return float(np.mean(ranks) / (len(perts) - n_skip))
 
 
 def vectorized_de(

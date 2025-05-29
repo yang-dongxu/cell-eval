@@ -5,6 +5,7 @@ eval_output/
 
 
 ## Custom State-Eval Ignores
+notebooks/*
 output/*
 *.h5ad
 dist/

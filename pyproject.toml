@@ -1,6 +1,6 @@
 [project]
 name = "cell-eval"
-version = "0.4.4"
+version = "0.4.5"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
 authors = [
@@ -24,7 +24,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pytest>=8.3.5", "ruff>=0.11.8"]
+dev = ["ipykernel>=6.29.5", "pytest>=8.3.5", "ruff>=0.11.8"]
 
 [project.scripts]
 cell-eval = "cell_eval.__main__:main"
