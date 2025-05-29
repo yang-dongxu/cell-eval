@@ -1,12 +1,12 @@
 [project]
 name = "cell-eval"
-version = "0.4.3"
+version = "0.4.4"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
 authors = [
+    { name = "Noam Teyssier", email = "noam.teyssier@arcinstitute.org" },
     { name = "Abhinav Adduri", email = "abhinav.adduri@arcinstitute.org" },
     { name = "Yusuf Roohani", email = "yusuf.roohani@arcinstitute.org" },
-    { name = "Noam Teyssier", email = "noam.teyssier@arcinstitute.org" },
 ]
 requires-python = ">=3.10,<3.13"
 dependencies = [
