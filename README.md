@@ -20,6 +20,10 @@ uv pip install git+ssh://github.com/arcinstitute/cell-eval
 git clone ssh://github.com/arcinstitute/cell-eval
 cd cell-eval
 uv pip install -e .
+
+# install cli with uv tool
+uv tool install git+ssh://github.com/arcinstitute/cell-eval
+cell-eval --help
 ```
 
 ## Usage
@@ -29,10 +33,14 @@ uv pip install -e .
 You can run evaluation between two anndatas on the CLI
 
 ```bash
+# prepare for processing / strip anndata to bare essentials + compression
+cell-eval prep -i <your/path/to/pred>.h5ad
+cell-eval prep -i <your/path/to/real>.h5ad
+
 # run evaluation
-uv run run_eval \
-    --adata_pred <your/path/to/pred>.h5ad \
-    --adata_true <your/path/to/true>.h5ad
+cell-eval run \
+    -p <your/path/to/pred>.h5ad \
+    -r <your/path/to/real>.h5ad
 ```
 
 ### Module Usage
