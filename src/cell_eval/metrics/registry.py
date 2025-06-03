@@ -23,6 +23,7 @@ class MetricInfo:
     type: MetricType
     func: Callable
     description: str
+    is_class: bool = False
 
 
 class Metric(Protocol):
@@ -56,8 +57,15 @@ class MetricRegistry:
             if name in self.metrics:
                 raise ValueError(f"Metric '{name}' already registered")
 
+            # Check if the metric is a class
+            is_class = isinstance(func, type)
+
             self.metrics[name] = MetricInfo(
-                name=name, type=metric_type, func=func, description=description
+                name=name,
+                type=metric_type,
+                func=func,
+                description=description,
+                is_class=is_class,
             )
             return func
 
@@ -99,6 +107,10 @@ class MetricRegistry:
             Metric result, either a single float or dictionary of values
         """
         metric = self.get_metric(name)
+        if metric.is_class:
+            # Instantiate the class before calling
+            instance = metric.func()
+            return instance(data)
         return metric.func(data)
 
 

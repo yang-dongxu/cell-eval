@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
-import pandas as pd
 from scipy.stats import spearmanr
 
 from .registry import MetricType, registry
@@ -125,32 +124,17 @@ class DEDirectionMatch:
         """Compute directional agreement between real and predicted DE genes."""
         matches = {}
 
-        for pert in data.perturbations:
-            if pert == data.real.control_pert:
-                continue
-
-            # Get significant genes from real data
-            real_data = data.real.data[
-                (data.real.data[data.real.target_col] == pert)
-                & (data.real.data[data.real.fdr_col] < self.fdr_threshold)
-            ]
-
-            # Get corresponding predictions
-            real_features = set(real_data[data.real.feature_col])
-            pred_data = data.pred.data[
-                (data.pred.data[data.pred.target_col] == pert)
-                & (data.pred.data[data.pred.feature_col].isin(real_features))
-            ]
-
-            # Merge and compare directions
-            merged = pd.merge(
-                real_data,
-                pred_data,
+        for pert in data.iter_perturbations():
+            merged = data.real.filter_to_significant(
+                fdr_threshold=self.fdr_threshold
+            ).merge(
+                data.pred.data,
                 on=[data.real.target_col, data.real.feature_col],
                 suffixes=("_real", "_pred"),
+                how="inner",
             )
 
-            if len(merged) == 0:
+            if merged.shape[0] == 0:
                 matches[pert] = 0.0
                 continue
 

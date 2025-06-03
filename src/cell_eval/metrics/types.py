@@ -103,6 +103,13 @@ class DEResults:
             ascending = metric in {DESortBy.PVALUE, DESortBy.FDR}
         return self.filter_control().sort_values(metric.value, ascending=ascending)
 
+    def filter_to_significant(
+        self,
+        fdr_threshold: float = 0.05,
+    ) -> pd.DataFrame:
+        """Filter DE results to significant genes."""
+        return self.data[self.data[self.fdr_col] < fdr_threshold]
+
     def get_top_genes(
         self,
         sort_by: DESortBy,
