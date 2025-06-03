@@ -1,0 +1,250 @@
+"""Types module for metric computation."""
+
+import enum
+from dataclasses import dataclass
+from typing import Dict, List, Optional, TypeVar
+
+import anndata as ad
+import numpy as np
+import pandas as pd
+from numpy.typing import NDArray
+
+
+class DESortBy(enum.Enum):
+    """Sorting options for differential expression results."""
+
+    FOLD_CHANGE = "fold_change"
+    ABS_FOLD_CHANGE = "abs_fold_change"
+    PVALUE = "p_value"
+    FDR = "fdr"
+
+
+@dataclass(frozen=True)
+class DEResults:
+    """Raw differential expression results with sorting and filtering capabilities."""
+
+    data: pd.DataFrame
+    control_pert: str
+
+    # Column names configuration
+    target_col: str = "target"
+    feature_col: str = "feature"
+    fold_change_col: str = "fold_change"
+    pvalue_col: str = "p_value"
+    fdr_col: str = "fdr"
+
+    def __post_init__(self) -> None:
+        required_cols = {
+            self.target_col,
+            self.feature_col,
+            self.fold_change_col,
+            self.pvalue_col,
+            self.fdr_col,
+        }
+        missing = required_cols - set(self.data.columns)
+        if missing:
+            raise ValueError(f"Missing required columns: {missing}")
+
+        # Ensure numeric columns are float32
+        object.__setattr__(
+            self,
+            "data",
+            self.data.assign(
+                **{
+                    self.fold_change_col: self.data[self.fold_change_col].astype(
+                        "float32"
+                    ),
+                    self.pvalue_col: self.data[self.pvalue_col].astype("float32"),
+                    self.fdr_col: self.data[self.fdr_col].astype("float32"),
+                }
+            ),
+        )
+
+    def get_significant_genes(
+        self, pert: str, fdr_threshold: float = 0.05
+    ) -> pd.Series:
+        """Get significant genes for a perturbation."""
+        return self.data[
+            (self.data[self.target_col] == pert)
+            & (self.data[self.fdr_col] < fdr_threshold)
+        ][self.feature_col]
+
+    def filter_control(self) -> pd.DataFrame:
+        """Return data without control perturbation rows."""
+        return self.data[self.data[self.target_col] != self.control_pert]
+
+    def sort_by_metric(
+        self,
+        metric: DESortBy,
+        ascending: Optional[bool] = None,
+    ) -> pd.DataFrame:
+        """Sort DE results by specified metric."""
+        if ascending is None:
+            ascending = metric in {DESortBy.PVALUE, DESortBy.FDR}
+
+        df = self.filter_control()
+
+        # Add abs_fold_change if needed
+        if metric == DESortBy.ABS_FOLD_CHANGE:
+            df = df.assign(abs_fold_change=df[self.fold_change_col].abs())
+
+        return df.sort_values(
+            [self.target_col, metric.value], ascending=[True, ascending]
+        )
+
+    def get_top_genes(
+        self,
+        sort_by: DESortBy,
+        fdr_threshold: Optional[float] = None,
+    ) -> pd.DataFrame:
+        """Get top genes per perturbation, optionally filtered by FDR."""
+        df = self.filter_control()
+
+        # Apply FDR filter if specified
+        if fdr_threshold is not None:
+            df = df[df[self.fdr_col] < fdr_threshold]
+
+        # Sort by metric
+        df = self.sort_by_metric(sort_by)
+
+        # Add rank and pivot
+        df = df.assign(rank=df.groupby(self.target_col).cumcount())
+        return df.pivot(
+            index=self.target_col, columns="rank", values=self.feature_col
+        ).sort_index(axis=1)
+
+
+@dataclass
+class DEComparison:
+    """Comparison between real and predicted DE results."""
+
+    real: DEResults
+    pred: DEResults
+    perturbations: List[str]
+
+    def __post_init__(self) -> None:
+        if self.real.control_pert != self.pred.control_pert:
+            raise ValueError("Control perturbations don't match")
+
+    def compute_overlap(
+        self,
+        k: Optional[int] = None,
+        topk: Optional[int] = None,
+        fdr_threshold: Optional[float] = None,
+        sort_by: DESortBy = DESortBy.ABS_FOLD_CHANGE,
+    ) -> Dict[str, float]:
+        """
+        Compute overlap metrics across perturbations.
+
+        Args:
+            k: If specified, use top k genes from real data
+            topk: If specified, use top k genes from predicted data
+            fdr_threshold: If specified, only consider genes below this FDR
+            sort_by: Metric to sort genes by
+
+        Returns:
+            Dictionary mapping perturbation names to overlap scores
+        """
+        if k is not None and topk is not None:
+            raise ValueError("Provide only one of k or topk")
+
+        overlaps = {}
+        for pert in self.perturbations:
+            if pert == self.real.control_pert:
+                continue
+
+            # Get sorted gene lists
+            real_genes = (
+                self.real.get_top_genes(sort_by=sort_by, fdr_threshold=fdr_threshold)
+                .loc[pert]
+                .dropna()
+            )
+
+            pred_genes = (
+                self.pred.get_top_genes(sort_by=sort_by, fdr_threshold=fdr_threshold)
+                .loc[pert]
+                .dropna()
+            )
+
+            # Apply k/topk limits
+            if k == -1:
+                k_eff = len(real_genes)
+            else:
+                k_eff = k if k is not None else len(real_genes)
+
+            real_subset = set(real_genes[:k_eff])
+            pred_subset = set(pred_genes[: (topk or k_eff)])
+
+            # Calculate overlap
+            denom = len(pred_subset) if topk else len(real_subset)
+            overlaps[pert] = len(real_subset & pred_subset) / denom if denom else 0.0
+
+        return overlaps
+
+
+Array = TypeVar("Array", bound=NDArray)
+
+
+@dataclass(frozen=True)
+class ArrayPair:
+    """Pair of arrays for direct numerical comparison."""
+
+    real: Array
+    pred: Array
+
+    def __post_init__(self) -> None:
+        if self.real.shape != self.pred.shape:
+            raise ValueError(
+                f"Shape mismatch: real {self.real.shape} != pred {self.pred.shape}"
+            )
+
+
+@dataclass(frozen=True)
+class DeltaArrays:
+    """Arrays for computing differences from control."""
+
+    pert_real: Array
+    pert_pred: Array
+    ctrl_real: Array
+    ctrl_pred: Optional[Array] = None
+
+    def __post_init__(self) -> None:
+        # Validate shapes match
+        shapes = {
+            "pert_real": self.pert_real.shape,
+            "pert_pred": self.pert_pred.shape,
+            "ctrl_real": self.ctrl_real.shape,
+        }
+        if self.ctrl_pred is not None:
+            shapes["ctrl_pred"] = self.ctrl_pred.shape
+
+        if len(set(shapes.values())) > 1:
+            raise ValueError(f"Shape mismatch in arrays: {shapes}")
+
+
+@dataclass(frozen=True)
+class AnnDataPair:
+    """Base class for paired AnnData comparisons."""
+
+    real: ad.AnnData
+    pred: ad.AnnData
+    pert_col: str
+    control_pert: str
+    celltype_col: Optional[str] = None
+
+    def get_pert_indices(self, pert: str) -> tuple[np.ndarray, np.ndarray]:
+        """Get indices for perturbation in both real and pred data."""
+        real_idx = self.real.obs[self.pert_col] == pert
+        pred_idx = self.pred.obs[self.pert_col] == pert
+        return real_idx, pred_idx
+
+    def get_control_indices(self) -> tuple[np.ndarray, np.ndarray]:
+        """Get indices for control in both real and pred data."""
+        return self.get_pert_indices(self.control_pert)
+
+
+@dataclass(frozen=True)
+class PerturbationAnnData(AnnDataPair):
+    """For metrics that compare perturbation effects in AnnData objects."""
+
+    pass
