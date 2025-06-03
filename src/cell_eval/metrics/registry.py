@@ -4,7 +4,7 @@ import enum
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Protocol, Union
 
-from .types import ArrayPair, DEComparison, DeltaArrays, PerturbationAnnData
+from .types import DEComparison, DeltaArrays
 
 
 class MetricType(enum.Enum):
@@ -13,7 +13,6 @@ class MetricType(enum.Enum):
     ARRAY = "array"
     DELTA = "delta"
     DE = "de"
-    ANNDATA = "anndata"
 
 
 @dataclass
@@ -87,7 +86,7 @@ class MetricRegistry:
     def compute(
         self,
         name: str,
-        data: Union[ArrayPair, DeltaArrays, DEComparison, PerturbationAnnData],
+        data: Union[DeltaArrays, DEComparison],
     ) -> Union[float, Dict[str, float]]:
         """
         Compute a metric on the provided data.

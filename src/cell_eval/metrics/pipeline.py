@@ -4,17 +4,14 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Union
 
-import anndata as ad
 import numpy as np
 import pandas as pd
 
 from .registry import MetricType, registry
 from .types import (
-    ArrayPair,
     DEComparison,
     DeltaArrays,
     DEResults,
-    PerturbationAnnData,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,51 +48,12 @@ class MetricPipeline:
         for name in names:
             self.add_metric(name)
 
-    def compute_array_metrics(
-        self,
-        real: np.ndarray,
-        pred: np.ndarray,
-        celltype: Optional[str] = None,
-        perturbation: Optional[str] = None,
-    ) -> None:
-        """Compute array-based metrics."""
-        data = ArrayPair(real=real, pred=pred)
-
-        for name in self.metrics:
-            metric_info = registry.get_metric(name)
-            if metric_info.type != MetricType.ARRAY:
-                continue
-
-            try:
-                value = registry.compute(name, data)
-                self._results.append(
-                    MetricResult(
-                        name=name,
-                        value=value,
-                        metric_type=MetricType.ARRAY,
-                        perturbation=perturbation,
-                        celltype=celltype,
-                    )
-                )
-            except Exception as e:
-                logger.error(f"Error computing metric '{name}': {e}")
-
     def compute_delta_metrics(
         self,
-        pert_real: np.ndarray,
-        pert_pred: np.ndarray,
-        ctrl_real: np.ndarray,
-        ctrl_pred: Optional[np.ndarray] = None,
-        celltype: Optional[str] = None,
-        perturbation: Optional[str] = None,
+        data: DeltaArrays,
+        celltype: str,
     ) -> None:
         """Compute delta-based metrics."""
-        data = DeltaArrays(
-            pert_real=pert_real,
-            pert_pred=pert_pred,
-            ctrl_real=ctrl_real,
-            ctrl_pred=ctrl_pred,
-        )
 
         for name in self.metrics:
             metric_info = registry.get_metric(name)
@@ -109,7 +67,7 @@ class MetricPipeline:
                         name=name,
                         value=value,
                         metric_type=MetricType.DELTA,
-                        perturbation=perturbation,
+                        perturbation=data.pert,
                         celltype=celltype,
                     )
                 )
@@ -160,56 +118,6 @@ class MetricPipeline:
                             name=name,
                             value=value,
                             metric_type=MetricType.DE,
-                            celltype=celltype,
-                        )
-                    )
-            except Exception as e:
-                logger.error(f"Error computing metric '{name}': {e}")
-
-    def compute_anndata_metrics(
-        self,
-        real: ad.AnnData,
-        pred: ad.AnnData,
-        pert_col: str,
-        control_pert: str,
-        celltype_col: Optional[str] = None,
-        celltype: Optional[str] = None,
-    ) -> None:
-        """Compute AnnData-based metrics."""
-        data = PerturbationAnnData(
-            real=real,
-            pred=pred,
-            pert_col=pert_col,
-            control_pert=control_pert,
-            celltype_col=celltype_col,
-        )
-
-        for name in self.metrics:
-            metric_info = registry.get_metric(name)
-            if metric_info.type != MetricType.ANNDATA:
-                continue
-
-            try:
-                value = registry.compute(name, data)
-                if isinstance(value, dict):
-                    # Add each perturbation result separately
-                    for pert, pert_value in value.items():
-                        self._results.append(
-                            MetricResult(
-                                name=name,
-                                value=pert_value,
-                                metric_type=MetricType.ANNDATA,
-                                perturbation=pert,
-                                celltype=celltype,
-                            )
-                        )
-                else:
-                    # Add single aggregated result
-                    self._results.append(
-                        MetricResult(
-                            name=name,
-                            value=value,
-                            metric_type=MetricType.ANNDATA,
                             celltype=celltype,
                         )
                     )
