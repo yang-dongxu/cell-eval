@@ -81,10 +81,10 @@ class SignificantGeneOverlap(DEOverlapMetric):
 @registry.register(
     name="de_spearman_sig",
     metric_type=MetricType.DE,
-    description="Spearman correlation of significant DE gene counts",
+    description="Spearman correlation on number of significant DE genes",
 )
 class DESpearmanSignificant:
-    """Compute Spearman correlation of significant DE gene counts."""
+    """Compute Spearman correlation on number of significant DE genes."""
 
     def __init__(self, fdr_threshold: float = 0.05) -> None:
         self.fdr_threshold = fdr_threshold
