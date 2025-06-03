@@ -11,7 +11,6 @@ from .registry import MetricType, registry
 from .types import (
     DEComparison,
     DeltaArrays,
-    DEResults,
 )
 
 logger = logging.getLogger(__name__)
@@ -76,22 +75,10 @@ class MetricPipeline:
 
     def compute_de_metrics(
         self,
-        real: DEResults,
-        pred: DEResults,
-        perturbations: Optional[List[str]] = None,
+        data: DEComparison,
         celltype: Optional[str] = None,
     ) -> None:
         """Compute DE-based metrics."""
-        perts = perturbations or self.perturbations
-        if not perts:
-            raise ValueError("No perturbations provided")
-
-        data = DEComparison(
-            real=real,
-            pred=pred,
-            perturbations=perts,
-        )
-
         for name in self.metrics:
             metric_info = registry.get_metric(name)
             if metric_info.type != MetricType.DE:
@@ -100,6 +87,7 @@ class MetricPipeline:
             try:
                 value = registry.compute(name, data)
                 if isinstance(value, dict):
+                    print("ADDING PERTURBATION-WISE RESULTS: ", name)
                     # Add each perturbation result separately
                     for pert, pert_value in value.items():
                         self._results.append(
@@ -112,15 +100,21 @@ class MetricPipeline:
                             )
                         )
                 else:
-                    # Add single aggregated result
-                    self._results.append(
-                        MetricResult(
-                            name=name,
-                            value=value,
-                            metric_type=MetricType.DE,
-                            celltype=celltype,
-                        )
+                    print(
+                        "ADDING SINGLE AGGREGATED RESULT TO ALL PERTURBATIONS: ",
+                        name,
                     )
+                    # Add single aggregated result to all perturbations
+                    for pert in data.iter_perturbations():
+                        self._results.append(
+                            MetricResult(
+                                name=name,
+                                value=value,
+                                metric_type=MetricType.DE,
+                                perturbation=pert,
+                                celltype=celltype,
+                            )
+                        )
             except Exception as e:
                 logger.error(f"Error computing metric '{name}': {e}")
 

@@ -90,27 +90,24 @@ class DESpearmanSignificant:
         self.fdr_threshold = fdr_threshold
 
     def __call__(self, data: DEComparison) -> float:
-        """Compute correlation between real and predicted significant gene counts."""
-        real_counts = {}
-        pred_counts = {}
+        """Compute correlation between number of significant genes in real and predicted DE."""
+        n_sig_real = np.zeros(data.n_perts)
+        n_sig_pred = np.zeros(data.n_perts)
 
-        for pert in data.perturbations:
-            if pert == data.real.control_pert:
-                continue
+        for idx, pert in enumerate(data.iter_perturbations()):
+            n_sig_real[idx] = data.real.get_significant_genes(
+                pert, self.fdr_threshold
+            ).size
+            n_sig_pred[idx] = data.pred.get_significant_genes(
+                pert, self.fdr_threshold
+            ).size
 
-            real_sig = data.real.get_significant_genes(pert, self.fdr_threshold)
-            pred_sig = data.pred.get_significant_genes(pert, self.fdr_threshold)
+        if n_sig_real.sum() == 0 and n_sig_pred.sum() == 0:
+            # No significant genes in either real or predicted DE. Set to 1.0 since perfect
+            # agreement but will fail spearman test
+            return 1.0
 
-            real_counts[pert] = len(real_sig)
-            pred_counts[pert] = len(pred_sig)
-
-        if not real_counts:  # No perturbations found
-            return 0.0
-
-        real_values = [real_counts[p] for p in real_counts.keys()]
-        pred_values = [pred_counts[p] for p in real_counts.keys()]
-
-        return float(spearmanr(real_values, pred_values)[0])
+        return float(spearmanr(n_sig_real, n_sig_pred)[0])
 
 
 @registry.register(

@@ -2,7 +2,7 @@
 
 import enum
 from dataclasses import dataclass
-from typing import Dict, Iterator, List, Optional, TypeVar
+from typing import Dict, Iterator, Optional, TypeVar
 
 import anndata as ad
 import numpy as np
@@ -120,11 +120,31 @@ class DEComparison:
 
     real: DEResults
     pred: DEResults
-    perturbations: List[str]
 
     def __post_init__(self) -> None:
         if self.real.control_pert != self.pred.control_pert:
             raise ValueError("Control perturbations don't match")
+
+        real_perts = np.unique(self.real.data[self.real.target_col])
+        pred_perts = np.unique(self.pred.data[self.pred.target_col])
+        if not np.array_equal(real_perts, pred_perts):
+            raise ValueError(
+                f"Perturbation mismatch: real {real_perts} != pred {pred_perts}"
+            )
+        if self.real.control_pert in real_perts:
+            raise ValueError(
+                f"Control perturbation unexpected in {self.real.control_pert} found in real data: {real_perts}"
+            )
+        if self.pred.control_pert in pred_perts:
+            raise ValueError(
+                f"Control perturbation unexpected in {self.pred.control_pert} found in pred data: {pred_perts}"
+            )
+        object.__setattr__(self, "perturbations", list(real_perts))
+        object.__setattr__(self, "n_perts", len(real_perts))
+
+    def iter_perturbations(self) -> Iterator[str]:
+        for pert in self.perturbations:
+            yield pert
 
     def compute_overlap(
         self,
@@ -149,10 +169,7 @@ class DEComparison:
             raise ValueError("Provide only one of k or topk")
 
         overlaps = {}
-        for pert in self.perturbations:
-            if pert == self.real.control_pert:
-                continue
-
+        for pert in self.iter_perturbations():
             # Get sorted gene lists
             real_genes = (
                 self.real.get_top_genes(sort_by=sort_by, fdr_threshold=fdr_threshold)

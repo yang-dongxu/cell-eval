@@ -5,10 +5,11 @@ from typing import Dict, Set
 
 import anndata as ad
 import numpy as np
+from pdex import parallel_differential_expression
 
 from ..metrics.pipeline import MetricPipeline
 from ..metrics.registry import MetricType, registry
-from ..metrics.types import PerturbationAnndataPair
+from ..metrics.types import DEComparison, DEResults, PerturbationAnndataPair
 
 logger = logging.getLogger(__name__)
 
@@ -188,6 +189,39 @@ def run_metrics(args):
                 delta,
                 celltype=celltype,
             )
+
+        de_real = parallel_differential_expression(
+            adata=ct_real,
+            reference=args.control_pert,
+            groupby_key=args.pert_col,
+            metric=args.metric,
+            num_workers=args.n_threads,
+            batch_size=args.batch_size,
+        )
+        de_pred = parallel_differential_expression(
+            adata=ct_pred,
+            reference=args.control_pert,
+            groupby_key=args.pert_col,
+            metric=args.metric,
+            num_workers=args.n_threads,
+            batch_size=args.batch_size,
+        )
+
+        de_comparison = DEComparison(
+            real=DEResults(
+                data=de_real,
+                control_pert=args.control_pert,
+            ),
+            pred=DEResults(
+                data=de_pred,
+                control_pert=args.control_pert,
+            ),
+        )
+
+        pipeline.compute_de_metrics(
+            data=de_comparison,
+            celltype=celltype,
+        )
 
     results = pipeline.get_results()
     print(results)
