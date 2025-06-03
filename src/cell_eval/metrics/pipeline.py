@@ -4,7 +4,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Union
 
-import numpy as np
 import pandas as pd
 
 from .registry import MetricType, registry
@@ -25,6 +24,16 @@ class MetricResult:
     metric_type: MetricType
     perturbation: Optional[str] = None
     celltype: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, str | float]:
+        """Convert to dictionary."""
+        return {
+            "name": self.name,
+            "value": self.value,
+            "metric_type": self.metric_type.value,
+            "perturbation": self.perturbation,
+            "celltype": self.celltype,
+        }
 
 
 @dataclass
@@ -87,7 +96,6 @@ class MetricPipeline:
             try:
                 value = registry.compute(name, data)
                 if isinstance(value, dict):
-                    print("ADDING PERTURBATION-WISE RESULTS: ", name)
                     # Add each perturbation result separately
                     for pert, pert_value in value.items():
                         self._results.append(
@@ -100,10 +108,6 @@ class MetricPipeline:
                             )
                         )
                 else:
-                    print(
-                        "ADDING SINGLE AGGREGATED RESULT TO ALL PERTURBATIONS: ",
-                        name,
-                    )
                     # Add single aggregated result to all perturbations
                     for pert in data.iter_perturbations():
                         self._results.append(
@@ -128,37 +132,12 @@ class MetricPipeline:
 
         Where each row represents a unique celltype-perturbation combination.
         """
-        # Convert results to records
-        records = []
-        for result in self._results:
-            if isinstance(result.value, dict):
-                # Skip dictionary results that haven't been expanded
-                continue
-
-            record = {
-                "celltype": result.celltype or "all",
-                "perturbation": result.perturbation or "all",
-                result.name: result.value,
-            }
-            records.append(record)
-
-        if not records:
-            return pd.DataFrame(columns=["celltype", "perturbation"])
-
-        # Create DataFrame and pivot to get metrics as columns
-        df = pd.DataFrame.from_records(records)
-
-        # Ensure all metric columns exist
-        for metric in self.metrics:
-            if metric not in df.columns:
-                df[metric] = np.nan
-
-        # Arrange columns in desired order
-        metric_cols = [m for m in self.metrics if m in df.columns]
-        df = df[["celltype", "perturbation"] + metric_cols]
-
-        # Sort by celltype and perturbation
-        return df.sort_values(["celltype", "perturbation"]).reset_index(drop=True)
+        results = pd.DataFrame([r.to_dict() for r in self._results])
+        results = results.pivot(
+            index=["celltype", "perturbation"], columns="name", values="value"
+        ).reset_index()
+        results.columns.name = None
+        return results.sort_values(["celltype", "perturbation"])
 
     def get_summary_stats(self) -> pd.DataFrame:
         """Get summary statistics for each metric."""
