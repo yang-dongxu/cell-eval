@@ -515,7 +515,7 @@ class MetricsEvaluator:
         for celltype, df in metrics.items():
             # Compute average metrics if requested
             if average:
-                df = df.mean().to_frame().T
+                df = df.mean(numeric_only=True).to_frame().T
                 df.index = [celltype]
 
             # Append to all celltypes
