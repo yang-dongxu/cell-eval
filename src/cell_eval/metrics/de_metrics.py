@@ -80,6 +80,42 @@ class Top200Overlap(DEOverlapMetric):
 
 
 @registry.register(
+    name="precision_at_50",
+    metric_type=MetricType.DE,
+    description="Precision at 50",
+)
+class PrecisionAt50(DEOverlapMetric):
+    """Compute precision at 50."""
+
+    def __init__(self) -> None:
+        super().__init__(topk=50)
+
+
+@registry.register(
+    name="precision_at_100",
+    metric_type=MetricType.DE,
+    description="Precision at 100",
+)
+class PrecisionAt100(DEOverlapMetric):
+    """Compute precision at 100."""
+
+    def __init__(self) -> None:
+        super().__init__(topk=100)
+
+
+@registry.register(
+    name="precision_at_200",
+    metric_type=MetricType.DE,
+    description="Precision at 200",
+)
+class PrecisionAt200(DEOverlapMetric):
+    """Compute precision at 200."""
+
+    def __init__(self) -> None:
+        super().__init__(topk=200)
+
+
+@registry.register(
     name="significant_gene_overlap",
     metric_type=MetricType.DE,
     description="Overlap of all significant DE genes",
