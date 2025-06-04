@@ -1,7 +1,7 @@
 """Types module for metric computation."""
 
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, Iterator, Optional, TypeVar
 
 import anndata as ad
@@ -19,12 +19,36 @@ class DESortBy(enum.Enum):
     FDR = "fdr"
 
 
+def initialize_de_comparison(
+    real: pl.DataFrame,
+    pred: pl.DataFrame,
+    target_col: str = "target",
+    feature_col: str = "feature",
+    fold_change_col: str = "fold_change",
+    log2_fold_change_col: str = "log2_fold_change",
+    abs_log2_fold_change_col: str = "abs_log2_fold_change",
+    pvalue_col: str = "p_value",
+    fdr_col: str = "fdr",
+) -> "DEComparison":
+    build_de_result = lambda df: DEResults(
+        data=df,
+        target_col=target_col,
+        feature_col=feature_col,
+        fold_change_col=fold_change_col,
+        log2_fold_change_col=log2_fold_change_col,
+        abs_log2_fold_change_col=abs_log2_fold_change_col,
+        pvalue_col=pvalue_col,
+        fdr_col=fdr_col,
+    )
+    with pl.StringCache():
+        return DEComparison(real=build_de_result(real), pred=build_de_result(pred))
+
+
 @dataclass(frozen=False)
 class DEResults:
     """Raw differential expression results with sorting and filtering capabilities."""
 
     data: pl.DataFrame
-    control_pert: str
 
     # Column names configuration
     target_col: str = "target"
@@ -151,10 +175,10 @@ class DEComparison:
     real: DEResults
     pred: DEResults
 
-    def __post_init__(self) -> None:
-        if self.real.control_pert != self.pred.control_pert:
-            raise ValueError("Control perturbations don't match")
+    perturbations: list[str] = field(init=False)
+    n_perts: int = field(init=False)
 
+    def __post_init__(self) -> None:
         real_perts = self.real.get_perts()
         pred_perts = self.pred.get_perts()
         if not np.array_equal(real_perts, pred_perts):
@@ -162,14 +186,6 @@ class DEComparison:
                 f"Perturbation mismatch: real {real_perts} != pred {pred_perts}"
             )
 
-        if self.real.control_pert in real_perts:
-            raise ValueError(
-                f"Control perturbation unexpected in {self.real.control_pert} found in real data: {real_perts}"
-            )
-        if self.pred.control_pert in pred_perts:
-            raise ValueError(
-                f"Control perturbation unexpected in {self.pred.control_pert} found in pred data: {pred_perts}"
-            )
         object.__setattr__(self, "perturbations", list(real_perts))
         object.__setattr__(self, "n_perts", len(real_perts))
 
