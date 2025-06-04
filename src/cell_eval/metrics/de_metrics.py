@@ -1,7 +1,7 @@
 """DE metrics module."""
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Literal
 
 import numpy as np
 import polars as pl
@@ -208,92 +208,6 @@ class DESpearmanLFC:
 
 
 @registry.register(
-    name="de_pr_auc",
-    metric_type=MetricType.DE,
-    description="Precision-Recall AUC for significant genes",
-)
-class DEPRAUC:
-    """Compute Precision-Recall AUC for significant genes."""
-
-    def __init__(self, fdr_threshold: float = 0.05) -> None:
-        self.fdr_threshold = fdr_threshold
-
-    def __call__(self, data: DEComparison) -> Dict[str, float]:
-        """Compute PR AUC between real and predicted significant genes."""
-        pr_aucs = {}
-
-        for pert in data.iter_perturbations():
-            real_sig = data.real.filter_to_significant(fdr_threshold=self.fdr_threshold)
-            pred_sig = data.pred.filter_to_significant(fdr_threshold=self.fdr_threshold)
-
-            merged = real_sig.merge(
-                pred_sig,
-                on=[data.real.target_col, data.real.feature_col],
-                suffixes=("_real", "_pred"),
-                how="outer",
-            )
-
-            if merged.shape[0] == 0:
-                pr_aucs[pert] = np.nan
-                continue
-
-            # Create binary labels based on real significance
-            y = (merged[f"{data.real.fdr_col}_real"] < self.fdr_threshold).astype(int)
-            scores = -np.log10(merged[f"{data.pred.fdr_col}_pred"])
-
-            if 0 < y.sum() < len(y):
-                pr, re, _ = precision_recall_curve(y, scores)
-                pr_aucs[pert] = float(auc(re, pr))
-            else:
-                pr_aucs[pert] = np.nan
-
-        return pr_aucs
-
-
-@registry.register(
-    name="de_roc_auc",
-    metric_type=MetricType.DE,
-    description="ROC AUC for significant genes",
-)
-class DEROCAUC:
-    """Compute ROC AUC for significant genes."""
-
-    def __init__(self, fdr_threshold: float = 0.05) -> None:
-        self.fdr_threshold = fdr_threshold
-
-    def __call__(self, data: DEComparison) -> Dict[str, float]:
-        """Compute ROC AUC between real and predicted significant genes."""
-        roc_aucs = {}
-
-        for pert in data.iter_perturbations():
-            real_sig = data.real.filter_to_significant(fdr_threshold=self.fdr_threshold)
-            pred_sig = data.pred.filter_to_significant(fdr_threshold=self.fdr_threshold)
-
-            merged = real_sig.merge(
-                pred_sig,
-                on=[data.real.target_col, data.real.feature_col],
-                suffixes=("_real", "_pred"),
-                how="outer",
-            )
-
-            if merged.shape[0] == 0:
-                roc_aucs[pert] = np.nan
-                continue
-
-            # Create binary labels based on real significance
-            y = (merged[f"{data.real.fdr_col}_real"] < self.fdr_threshold).astype(int)
-            scores = -np.log10(merged[f"{data.pred.fdr_col}_pred"])
-
-            if 0 < y.sum() < len(y):
-                f, t, _ = roc_curve(y, scores)
-                roc_aucs[pert] = float(auc(f, t))
-            else:
-                roc_aucs[pert] = np.nan
-
-        return roc_aucs
-
-
-@registry.register(
     name="de_sig_genes_recall",
     metric_type=MetricType.DE,
     description="Recall of significant genes",
@@ -359,3 +273,67 @@ class DENsigCounts:
             }
 
         return counts
+
+
+@registry.register(
+    name="pr_auc",
+    metric_type=MetricType.DE,
+    description="Computes precision-recall for significant recovery",
+)
+def compute_pr_auc(data: DEComparison) -> float:
+    """Compute precision-recall for significant recovery.
+
+    Args:
+        data: DEComparison object containing real and predicted DE results
+
+    Returns:
+        float: PR-AUC
+    """
+    return compute_generic_auc(data, method="pr")
+
+
+@registry.register(
+    name="roc_auc",
+    metric_type=MetricType.DE,
+    description="Computes ROC AUC for significant recovery",
+)
+def compute_roc_auc(data: DEComparison) -> float:
+    """Compute ROC AUC for significant recovery."""
+    return compute_generic_auc(data, method="roc")
+
+
+def compute_generic_auc(
+    data: DEComparison,
+    method: Literal["pr", "roc"] = "pr",
+) -> float:
+    """Compute generic AUC for significant recovery."""
+    labeled_real = data.real.data.with_columns(
+        (pl.col("fdr") < 0.05).cast(pl.Float32).alias("label")
+    ).select(pl.col("target", "feature", "label"))
+    merged = (
+        data.pred.data.select(pl.col("target", "feature", "fdr"))
+        .join(
+            labeled_real,
+            on=["target", "feature"],
+            how="inner",
+            coalesce=True,
+        )
+        .with_columns(nlp=-np.log10(pl.col("fdr").replace(0, 1e-10)))
+    )
+
+    if 0 < merged["label"].sum() < len(merged["label"]):
+        match method:
+            case "pr":
+                pr, re, _ = precision_recall_curve(
+                    merged["label"].to_numpy(),
+                    merged["nlp"].to_numpy(),
+                )
+                return float(auc(re, pr))
+            case "roc":
+                f, t, _ = roc_curve(
+                    merged["label"].to_numpy(),
+                    merged["nlp"].to_numpy(),
+                )
+                return float(auc(f, t))
+    else:
+        return np.nan
