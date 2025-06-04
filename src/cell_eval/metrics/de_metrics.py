@@ -306,21 +306,32 @@ class DESigGenesRecall:
 
     def __call__(self, data: DEComparison) -> Dict[str, float]:
         """Compute recall of significant genes between real and predicted DE."""
-        recalls = {}
 
-        for pert in data.iter_perturbations():
-            real_sig = data.real.get_significant_genes(pert, self.fdr_threshold)
-            pred_sig = data.pred.get_significant_genes(pert, self.fdr_threshold)
+        filt_real = data.real.filter_to_significant(fdr_threshold=self.fdr_threshold)
+        filt_pred = data.pred.filter_to_significant(fdr_threshold=self.fdr_threshold)
 
-            if real_sig.size == 0:
-                recalls[pert] = 0.0
-                continue
-
-            recalls[pert] = float(
-                np.intersect1d(real_sig, pred_sig).size / real_sig.size
+        recall_frame = (
+            filt_real.join(
+                filt_pred,
+                on=[data.real.target_col, data.real.feature_col],
+                how="inner",
+                coalesce=True,
             )
+            .group_by(data.real.target_col)
+            .len()
+            .join(
+                filt_real.group_by(data.real.target_col).len(),
+                on=data.real.target_col,
+                how="full",
+                suffix="_expected",
+                coalesce=True,
+            )
+            .fill_null(0)
+            .with_columns(recall=pl.col("len") / pl.col("len_expected"))
+            .select([data.real.target_col, "recall"])
+        )
 
-        return recalls
+        return {row[0]: row[1] for row in recall_frame.iter_rows()}
 
 
 @registry.register(
