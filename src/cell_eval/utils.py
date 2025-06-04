@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import scipy.sparse
-from ott.geometry.pointcloud import PointCloud
-from ott.problems.linear.linear_problem import LinearProblem
-from ott.solvers.linear.sinkhorn import Sinkhorn
+# from ott.geometry.pointcloud import PointCloud
+# from ott.problems.linear.linear_problem import LinearProblem
+# from ott.solvers.linear.sinkhorn import Sinkhorn
 from scipy.sparse import issparse
 from scipy.stats import pearsonr, spearmanr
 from sklearn.metrics import (

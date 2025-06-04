@@ -1,176 +1,166 @@
-"""Pipeline module for metric evaluation."""
+"""Pipeline for computing metrics."""
 
 import logging
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Union
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
-import pandas as pd
-
-from .registry import MetricType, registry
-from .types import (
-    DEComparison,
-    DeltaArrays,
-)
+import polars as pl
+import numpy as np
+from cell_eval.metrics.registry import MetricRegistry, MetricType, registry
+from cell_eval.metrics.types import DEComparison, PerturbationAnndataPair
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class MetricResult:
-    """Result of a single metric computation."""
+    """Result of a metric computation."""
 
     name: str
-    value: Union[float, Dict[str, float]]
-    metric_type: MetricType
-    perturbation: Optional[str] = None
+    value: float | str
     celltype: Optional[str] = None
+    perturbation: Optional[str] = None
 
-    def to_dict(self) -> Dict[str, str | float]:
-        """Convert to dictionary."""
+    def to_dict(self) -> Dict[str, float | str]:
+        """Convert result to dictionary."""
         return {
-            "name": self.name,
-            "value": self.value,
-            "metric_type": self.metric_type.value,
-            "perturbation": self.perturbation,
             "celltype": self.celltype,
+            "perturbation": self.perturbation,
+            "metric": self.name,
+            "value": self.value,
         }
 
 
-@dataclass
 class MetricPipeline:
-    """Pipeline for computing and aggregating metrics."""
+    """Pipeline for computing metrics."""
 
-    metrics: List[str] = field(default_factory=list)
-    celltypes: List[str] = field(default_factory=list)
-    perturbations: List[str] = field(default_factory=list)
-    _results: List[MetricResult] = field(default_factory=list, init=False)
+    def __init__(self) -> None:
+        """Initialize pipeline."""
+        self._metrics: List[str] = []
+        self._results: List[MetricResult] = []
 
-    def add_metric(self, name: str) -> None:
-        """Add a metric to the pipeline."""
-        if name not in registry.metrics:
-            raise ValueError(f"Metric '{name}' not found in registry")
-        self.metrics.append(name)
-
-    def add_metrics(self, names: Sequence[str]) -> None:
-        """Add multiple metrics to the pipeline."""
-        for name in names:
-            self.add_metric(name)
-
-    def compute_delta_metrics(
-        self,
-        data: DeltaArrays,
-        celltype: str,
-    ) -> None:
-        """Compute delta-based metrics."""
-
-        for name in self.metrics:
-            metric_info = registry.get_metric(name)
-            if metric_info.type != MetricType.DELTA:
-                continue
-
-            try:
-                value = registry.compute(name, data)
-                self._results.append(
-                    MetricResult(
-                        name=name,
-                        value=value,
-                        metric_type=MetricType.DELTA,
-                        perturbation=data.pert,
-                        celltype=celltype,
-                    )
-                )
-            except Exception as e:
-                logger.error(f"Error computing metric '{name}': {e}")
+    def add_metrics(self, metrics: List[str]) -> None:
+        """Add metrics to pipeline."""
+        self._metrics.extend(metrics)
 
     def compute_de_metrics(
-        self,
-        data: DEComparison,
-        celltype: Optional[str] = None,
+        self, data: DEComparison, celltype: Optional[str] = None
     ) -> None:
-        """Compute DE-based metrics."""
-        for name in self.metrics:
-            metric_info = registry.get_metric(name)
-            if metric_info.type != MetricType.DE:
-                continue
-
+        """Compute DE metrics."""
+        for name in self._metrics:
             try:
+                logger.info(f"Computing metric '{name}'")
                 value = registry.compute(name, data)
                 if isinstance(value, dict):
                     # Add each perturbation result separately
                     for pert, pert_value in value.items():
-                        self._results.append(
-                            MetricResult(
-                                name=name,
-                                value=pert_value,
-                                metric_type=MetricType.DE,
-                                perturbation=pert,
-                                celltype=celltype,
+                        if isinstance(pert_value, dict):
+                            for sub_name, value in pert_value.items():
+                                self._results.append(
+                                    MetricResult(
+                                        name=f"{name}_{sub_name}",
+                                        value=value,
+                                        celltype=celltype,
+                                        perturbation=pert,
+                                    )
+                                )
+                        else:
+                            self._results.append(
+                                MetricResult(
+                                    name=name,
+                                    value=pert_value,
+                                    celltype=celltype,
+                                    perturbation=pert,
+                                )
                             )
-                        )
                 else:
-                    # Add single aggregated result to all perturbations
-                    for pert in data.iter_perturbations():
-                        self._results.append(
-                            MetricResult(
-                                name=name,
-                                value=value,
-                                metric_type=MetricType.DE,
-                                perturbation=pert,
-                                celltype=celltype,
-                            )
+                    # Add single result
+                    self._results.append(
+                        MetricResult(
+                            name=name,
+                            value=value,
+                            celltype=celltype,
                         )
+                    )
             except Exception as e:
                 logger.error(f"Error computing metric '{name}': {e}")
-
-    def get_results(self) -> pd.DataFrame:
-        """Get all metric results as a matrix-like DataFrame.
-
-        Returns a DataFrame with columns:
-        - celltype
-        - perturbation
-        - [metric1, metric2, ...]
-
-        Where each row represents a unique celltype-perturbation combination.
-        """
-        results = pd.DataFrame([r.to_dict() for r in self._results])
-        results = results.pivot(
-            index=["celltype", "perturbation"], columns="name", values="value"
-        ).reset_index()
-        results.columns.name = None
-        return results.sort_values(["celltype", "perturbation"])
-
-    def get_summary_stats(self) -> pd.DataFrame:
-        """Get summary statistics for each metric."""
-        results = self.get_results()
-
-        # Get metric columns
-        metric_cols = [
-            col for col in results.columns if col not in ["celltype", "perturbation"]
-        ]
-
-        if not metric_cols:
-            return pd.DataFrame()
-
-        # Calculate statistics
-        stats = []
-        for metric in metric_cols:
-            values = results[metric].dropna()
-            if len(values) == 0:
                 continue
 
+    def compute_perturbation_metrics(
+        self, data: PerturbationAnndataPair, celltype: Optional[str] = None
+    ) -> None:
+        """Compute perturbation metrics."""
+        for name in self._metrics:
+            try:
+                logger.info(f"Computing metric '{name}'")
+                value = registry.compute(name, data)
+                if isinstance(value, dict):
+                    # Add each perturbation result separately
+                    for pert, pert_value in value.items():
+                        if isinstance(pert_value, dict):
+                            for sub_name, value in pert_value.items():
+                                self._results.append(
+                                    MetricResult(
+                                        name=f"{name}_{sub_name}",
+                                        value=value,
+                                        celltype=celltype,
+                                        perturbation=pert,
+                                    )
+                                )
+                        else:
+                            self._results.append(
+                                MetricResult(
+                                    name=name,
+                                    value=pert_value,
+                                    celltype=celltype,
+                                    perturbation=pert,
+                                )
+                            )
+                else:
+                    # Add single result
+                    self._results.append(
+                        MetricResult(
+                            name=name,
+                            value=value,
+                            celltype=celltype,
+                        )
+                    )
+            except Exception as e:
+                logger.error(f"Error computing metric '{name}': {e}")
+                continue
+
+    def get_results(self) -> pl.DataFrame:
+        """Get results as a DataFrame."""
+        if not self._results:
+            return pl.DataFrame()
+        return pl.DataFrame([r.to_dict() for r in self._results]).pivot(
+            index=["celltype", "perturbation"],
+            on="metric",
+            values="value",
+        )
+
+    def get_summary_stats(self) -> pl.DataFrame:
+        """Get summary statistics for results."""
+        if not self._results:
+            return pl.DataFrame()
+
+        # Group by metric and compute statistics
+        stats = []
+        for name in set(r.name for r in self._results):
+            values = [r.value for r in self._results if r.name == name]
+            if not values:
+                continue
             stats.append(
                 {
-                    "metric": metric,
-                    "mean": values.mean(),
-                    "std": values.std(),
-                    "min": values.min(),
-                    "max": values.max(),
-                    "count": len(values),
+                    "metric": name,
+                    "mean": float(np.mean(values)),
+                    "std": float(np.std(values)),
+                    "min": float(np.min(values)),
+                    "max": float(np.max(values)),
                 }
             )
 
-        return pd.DataFrame(stats).set_index("metric")
+        if not stats:
+            return pl.DataFrame()
 
-    def clear_results(self) -> None:
-        """Clear all computed results."""
-        self._results = []
+        return pl.DataFrame(stats).set_index("metric")

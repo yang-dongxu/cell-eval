@@ -6,7 +6,7 @@ from typing import Dict, Iterator, Optional, TypeVar
 
 import anndata as ad
 import numpy as np
-import pandas as pd
+import polars as pl
 from numpy.typing import NDArray
 
 
@@ -19,11 +19,11 @@ class DESortBy(enum.Enum):
     FDR = "fdr"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class DEResults:
     """Raw differential expression results with sorting and filtering capabilities."""
 
-    data: pd.DataFrame
+    data: pl.DataFrame
     control_pert: str
 
     # Column names configuration
@@ -48,93 +48,93 @@ class DEResults:
             raise ValueError(f"Missing required columns: {missing}")
 
         # Enforce fold_change is float32
-        self.data[self.fold_change_col] = self.data[self.fold_change_col].astype(
-            "float32"
+        self.data = self.data.with_columns(
+            pl.col(self.fold_change_col).cast(pl.Float32)
         )
 
-        # Add log2 fold change column if not present
+        # Add log2 fold change columns if not present
         if self.log2_fold_change_col not in self.data.columns:
-            self.data[self.log2_fold_change_col] = np.log2(
-                self.data[self.fold_change_col]
-            )
-            # Set to 0 for genes with no fold change
-            self.data[self.log2_fold_change_col] = self.data[
-                self.log2_fold_change_col
-            ].fillna(0.0)
-
-        # Add abs log2 fold change column if not present
-        if self.abs_log2_fold_change_col not in self.data.columns:
-            self.data[self.abs_log2_fold_change_col] = np.abs(
-                self.data[self.log2_fold_change_col]
+            self.data = self.data.with_columns(
+                pl.col(self.fold_change_col).log(base=2).alias(self.log2_fold_change_col).fill_nan(0.0)
+            ).with_columns(
+                pl.col(self.log2_fold_change_col).abs().alias(self.abs_log2_fold_change_col)
             )
 
         # Ensure numeric columns are float32
-        object.__setattr__(
-            self,
-            "data",
-            self.data.assign(
-                **{
-                    self.pvalue_col: self.data[self.pvalue_col].astype("float32"),
-                    self.fdr_col: self.data[self.fdr_col].astype("float32"),
-                }
-            ),
-        )
+        self.data = self.data.with_columns([
+            pl.col(self.pvalue_col).cast(pl.Float32),
+            pl.col(self.fdr_col).cast(pl.Float32),
+        ])
+
+    def get_perts(self) -> np.ndarray[str]:
+        """Get perturbations."""
+        perts = self.data[self.target_col].unique().to_numpy()
+        perts.sort()
+        return perts
 
     def get_significant_genes(
         self, pert: str, fdr_threshold: float = 0.05
-    ) -> pd.Series:
+    ) -> np.ndarray[str]:
         """Get significant genes for a perturbation."""
-        return self.data[
-            (self.data[self.target_col] == pert)
-            & (self.data[self.fdr_col] < fdr_threshold)
-        ][self.feature_col]
+        return self.data.filter(
+            (pl.col(self.target_col) == pert) & (pl.col(self.fdr_col) < fdr_threshold)
+        ).select(self.feature_col).to_numpy()
 
-    def filter_control(self) -> pd.DataFrame:
+    def filter_control(self) -> pl.DataFrame:
         """Return data without control perturbation rows."""
-        return self.data[self.data[self.target_col] != self.control_pert]
+        return self.data.filter(pl.col(self.target_col) != self.control_pert)
 
     def sort_by_metric(
         self,
         metric: DESortBy,
         ascending: bool | None = None,
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """Sort DE results by specified metric."""
         if ascending is None:
             ascending = metric in {DESortBy.PVALUE, DESortBy.FDR}
-        return self.filter_control().sort_values(metric.value, ascending=ascending)
+        return self.filter_control().sort(metric.value, descending=not ascending)
 
     def filter_to_significant(
         self,
         fdr_threshold: float = 0.05,
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """Filter DE results to significant genes."""
-        return self.data[self.data[self.fdr_col] < fdr_threshold]
+        return self.data.filter(pl.col(self.fdr_col) < fdr_threshold)
 
     def get_top_genes(
         self,
         sort_by: DESortBy,
         fdr_threshold: Optional[float] = None,
-    ) -> pd.DataFrame:
+    ) -> pl.DataFrame:
         """Get top genes per perturbation, optionally filtered by FDR."""
-        df = self.sort_by_metric(sort_by)
 
-        if fdr_threshold is not None:
-            df = df[df[self.fdr_col] < fdr_threshold]
+        descending = sort_by in {DESortBy.FOLD_CHANGE, DESortBy.ABS_FOLD_CHANGE}
 
-        df = df.assign(rank=df.groupby(self.target_col).cumcount())
-        matrix = df.pivot(
-            index=self.target_col, columns="rank", values=self.feature_col
+        # Create a rank matrix where each row is the ordinal rank of a gene and each column is a perturbation.
+        # The rank is sensitive to the sort-by column and is computed post-filtering for FDR.
+        rank_matrix = (
+            self.data.filter(pl.col(self.fdr_col) < fdr_threshold)
+            .with_columns(
+                rank=pl.struct(sort_by.value).rank("ordinal", descending=descending).over("target") - 1
+            )
+            .pivot(
+                index="rank",
+                on="target",
+                values="feature",
+            )
+            .sort("rank")
         )
 
-        # Add missing perturbations
-        for pert in df[self.target_col].unique():
-            if pert not in matrix.index:
-                matrix.loc[pert] = np.full(matrix.shape[1], np.nan)
+        # Add perturbations that are missing from the rank matrix (no significant genes)
+        missing_perts = set(self.get_perts()) - set(rank_matrix.columns)
+        if missing_perts:
+            rank_matrix = rank_matrix.with_columns(
+                [
+                    pl.lit(None).alias(p) for p in missing_perts
+                ]
+            )
 
-        # Sort by rank
-        matrix = matrix.sort_index(axis=1)
-
-        return matrix
+        return rank_matrix
 
 
 @dataclass
@@ -148,12 +148,13 @@ class DEComparison:
         if self.real.control_pert != self.pred.control_pert:
             raise ValueError("Control perturbations don't match")
 
-        real_perts = np.unique(self.real.data[self.real.target_col])
-        pred_perts = np.unique(self.pred.data[self.pred.target_col])
+        real_perts = self.real.get_perts()
+        pred_perts = self.pred.get_perts()
         if not np.array_equal(real_perts, pred_perts):
             raise ValueError(
                 f"Perturbation mismatch: real {real_perts} != pred {pred_perts}"
             )
+
         if self.real.control_pert in real_perts:
             raise ValueError(
                 f"Control perturbation unexpected in {self.real.control_pert} found in real data: {real_perts}"
@@ -207,15 +208,15 @@ class DEComparison:
         for pert in self.iter_perturbations():
             # If perturbation is not in either real or pred, set overlap to 0.0
             if (
-                pert not in real_sig_rank_matrix.index
-                or pert not in pred_sig_rank_matrix.index
+                pert not in real_sig_rank_matrix.columns
+                or pert not in pred_sig_rank_matrix.columns
             ):
                 overlaps[pert] = 0.0
                 continue
 
             # Get sorted gene lists
-            real_genes = real_sig_rank_matrix.loc[pert].dropna().values
-            pred_genes = pred_sig_rank_matrix.loc[pert].dropna().values
+            real_genes = real_sig_rank_matrix[pert].drop_nulls().to_numpy()
+            pred_genes = pred_sig_rank_matrix[pert].drop_nulls().to_numpy()
 
             # Apply k/topk limits
             if k == -1:

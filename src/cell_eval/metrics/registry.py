@@ -3,7 +3,6 @@
 import enum
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Protocol, Union
-
 from .types import DEComparison, DeltaArrays
 
 
