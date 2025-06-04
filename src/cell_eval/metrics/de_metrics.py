@@ -92,23 +92,43 @@ class DESpearmanSignificant:
 
     def __call__(self, data: DEComparison) -> float:
         """Compute correlation between number of significant genes in real and predicted DE."""
-        n_sig_real = np.zeros(data.n_perts)
-        n_sig_pred = np.zeros(data.n_perts)
 
-        for idx, pert in enumerate(data.iter_perturbations()):
-            n_sig_real[idx] = data.real.get_significant_genes(
-                pert, self.fdr_threshold
-            ).size
-            n_sig_pred[idx] = data.pred.get_significant_genes(
-                pert, self.fdr_threshold
-            ).size
+        filt_real = (
+            data.real.filter_to_significant(fdr_threshold=self.fdr_threshold)
+            .group_by(data.real.target_col)
+            .len()
+        )
+        filt_pred = (
+            data.pred.filter_to_significant(fdr_threshold=self.fdr_threshold)
+            .group_by(data.pred.target_col)
+            .len()
+        )
 
-        if n_sig_real.sum() == 0 and n_sig_pred.sum() == 0:
-            # No significant genes in either real or predicted DE. Set to 1.0 since perfect
-            # agreement but will fail spearman test
+        merged = filt_real.join(
+            filt_pred,
+            left_on=data.real.target_col,
+            right_on=data.pred.target_col,
+            suffix="_pred",
+            how="full",
+            coalesce=True,
+        ).fill_null(0)
+
+        # No significant genes in either real or predicted DE. Set to 1.0 since perfect
+        # agreement but will fail spearman test
+        if merged.shape[0] == 0:
             return 1.0
 
-        return float(spearmanr(n_sig_real, n_sig_pred)[0])
+        return float(
+            merged.select(
+                pl.corr(
+                    pl.col("len"),
+                    pl.col("len_pred"),
+                    method="spearman",
+                ).alias("spearman_corr_nsig")
+            )
+            .to_numpy()
+            .flatten()[0]
+        )
 
 
 @registry.register(
