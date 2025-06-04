@@ -126,25 +126,24 @@ class DEDirectionMatch:
         """Compute directional agreement between real and predicted DE genes."""
         matches = {}
 
-        for pert in data.iter_perturbations():
-            merged = data.real.filter_to_significant(
-                fdr_threshold=self.fdr_threshold
-            ).merge(
-                data.pred.data,
-                on=[data.real.target_col, data.real.feature_col],
-                suffixes=("_real", "_pred"),
-                how="inner",
+        merged = data.real.filter_to_significant(fdr_threshold=0.05).join(
+            data.pred.data,
+            on=[data.real.target_col, data.real.feature_col],
+            suffix="_pred",
+            how="inner",
+        )
+        for row in (
+            merged.with_columns(
+                direction_match=pl.col(data.real.log2_fold_change_col).sign()
+                == pl.col(f"{data.real.log2_fold_change_col}_pred").sign()
             )
-
-            if merged.shape[0] == 0:
-                matches[pert] = 0.0
-                continue
-
-            # Compare signs of fold changes
-            real_signs = np.sign(merged[f"{data.real.fold_change_col}_real"])
-            pred_signs = np.sign(merged[f"{data.pred.fold_change_col}_pred"])
-            matches[pert] = float(np.mean(real_signs == pred_signs))
-
+            .group_by(
+                data.real.target_col,
+            )
+            .agg(pl.mean("direction_match"))
+            .iter_rows()
+        ):
+            matches.update({row[0]: row[1]})
         return matches
 
 
@@ -163,24 +162,26 @@ class DESpearmanLFC:
         """Compute correlation between log fold changes of significant genes."""
         correlations = {}
 
-        merged = data.real.filter_to_significant(
-            fdr_threshold=self.fdr_threshold
-        ).join(
+        merged = data.real.filter_to_significant(fdr_threshold=self.fdr_threshold).join(
             data.pred.data,
             on=[data.real.target_col, data.real.feature_col],
             suffix="_pred",
             how="inner",
         )
 
-        for row in merged.group_by(
-            data.real.target_col,
-        ).agg(
-            pl.corr(
-                pl.col(data.real.fold_change_col),
-                pl.col(f"{data.real.fold_change_col}_pred"),
-                method="spearman",
-            ).alias("spearman_corr"),
-        ).iter_rows():
+        for row in (
+            merged.group_by(
+                data.real.target_col,
+            )
+            .agg(
+                pl.corr(
+                    pl.col(data.real.fold_change_col),
+                    pl.col(f"{data.real.fold_change_col}_pred"),
+                    method="spearman",
+                ).alias("spearman_corr"),
+            )
+            .iter_rows()
+        ):
             correlations.update({row[0]: row[1]})
 
         return correlations

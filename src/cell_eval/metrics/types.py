@@ -55,16 +55,23 @@ class DEResults:
         # Add log2 fold change columns if not present
         if self.log2_fold_change_col not in self.data.columns:
             self.data = self.data.with_columns(
-                pl.col(self.fold_change_col).log(base=2).alias(self.log2_fold_change_col).fill_nan(0.0)
+                pl.col(self.fold_change_col)
+                .log(base=2)
+                .alias(self.log2_fold_change_col)
+                .fill_nan(0.0)
             ).with_columns(
-                pl.col(self.log2_fold_change_col).abs().alias(self.abs_log2_fold_change_col)
+                pl.col(self.log2_fold_change_col)
+                .abs()
+                .alias(self.abs_log2_fold_change_col)
             )
 
         # Ensure numeric columns are float32
-        self.data = self.data.with_columns([
-            pl.col(self.pvalue_col).cast(pl.Float32),
-            pl.col(self.fdr_col).cast(pl.Float32),
-        ])
+        self.data = self.data.with_columns(
+            [
+                pl.col(self.pvalue_col).cast(pl.Float32),
+                pl.col(self.fdr_col).cast(pl.Float32),
+            ]
+        )
 
     def get_perts(self) -> np.ndarray[str]:
         """Get perturbations."""
@@ -76,9 +83,14 @@ class DEResults:
         self, pert: str, fdr_threshold: float = 0.05
     ) -> np.ndarray[str]:
         """Get significant genes for a perturbation."""
-        return self.data.filter(
-            (pl.col(self.target_col) == pert) & (pl.col(self.fdr_col) < fdr_threshold)
-        ).select(self.feature_col).to_numpy()
+        return (
+            self.data.filter(
+                (pl.col(self.target_col) == pert)
+                & (pl.col(self.fdr_col) < fdr_threshold)
+            )
+            .select(self.feature_col)
+            .to_numpy()
+        )
 
     def filter_control(self) -> pl.DataFrame:
         """Return data without control perturbation rows."""
@@ -115,7 +127,10 @@ class DEResults:
         rank_matrix = (
             self.data.filter(pl.col(self.fdr_col) < fdr_threshold)
             .with_columns(
-                rank=pl.struct(sort_by.value).rank("ordinal", descending=descending).over("target") - 1
+                rank=pl.struct(sort_by.value)
+                .rank("ordinal", descending=descending)
+                .over("target")
+                - 1
             )
             .pivot(
                 index="rank",
@@ -129,9 +144,7 @@ class DEResults:
         missing_perts = set(self.get_perts()) - set(rank_matrix.columns)
         if missing_perts:
             rank_matrix = rank_matrix.with_columns(
-                [
-                    pl.lit(None).alias(p) for p in missing_perts
-                ]
+                [pl.lit(None).alias(p) for p in missing_perts]
             )
 
         return rank_matrix
