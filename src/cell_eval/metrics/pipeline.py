@@ -91,11 +91,14 @@ class MetricPipeline:
                 logger.error(f"Error computing metric '{name}': {e}")
                 continue
 
-    def compute_perturbation_metrics(
+    def compute_delta_metrics(
         self, data: PerturbationAnndataPair, celltype: Optional[str] = None
     ) -> None:
         """Compute perturbation metrics."""
         for name in self._metrics:
+            if name not in registry.list_metrics(MetricType.DELTA):
+                continue
+
             try:
                 logger.info(f"Computing metric '{name}'")
                 value = registry.compute(name, data)
