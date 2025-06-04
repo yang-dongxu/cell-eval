@@ -74,14 +74,16 @@ class MetricPipeline:
                                 )
                             )
                 else:
-                    # Add single result
-                    self._results.append(
-                        MetricResult(
-                            name=name,
-                            value=value,
-                            celltype=celltype,
+                    # Add single result to all perturbations
+                    for pert in data.real.get_perts():
+                        self._results.append(
+                            MetricResult(
+                                name=name,
+                                value=value,
+                                celltype=celltype,
+                                perturbation=pert,
+                            )
                         )
-                    )
             except Exception as e:
                 logger.error(f"Error computing metric '{name}': {e}")
                 continue

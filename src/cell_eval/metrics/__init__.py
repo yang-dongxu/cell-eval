@@ -8,8 +8,6 @@ from .array_metrics import (
     pearson_delta,
 )
 from .de_metrics import (
-    DEPRAUC,
-    DEROCAUC,
     DEDirectionMatch,
     DENsigCounts,
     DEOverlapMetric,
@@ -20,6 +18,8 @@ from .de_metrics import (
     Top50Overlap,
     Top100Overlap,
     Top200Overlap,
+    compute_pr_auc,
+    compute_roc_auc,
 )
 from .registry import MetricRegistry, MetricType, registry
 from .types import (
@@ -46,8 +46,8 @@ __all__ = [
     "Top100Overlap",
     "Top200Overlap",
     "DESpearmanLFC",
-    "DEPRAUC",
-    "DEROCAUC",
+    "compute_pr_auc",
+    "compute_roc_auc",
     "DESigGenesRecall",
     "DENsigCounts",
     # Registry
