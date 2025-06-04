@@ -32,6 +32,18 @@ class DEOverlapMetric:
 
 
 @registry.register(
+    name="top_N_overlap",
+    metric_type=MetricType.DE,
+    description="Overlap of top k DE genes",
+)
+class TopNOverlap(DEOverlapMetric):
+    """Compute overlap of top N DE genes."""
+
+    def __init__(self) -> None:
+        super().__init__(k=-1)
+
+
+@registry.register(
     name="top_50_overlap",
     metric_type=MetricType.DE,
     description="Overlap of top 50 DE genes",
