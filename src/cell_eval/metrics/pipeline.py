@@ -48,6 +48,9 @@ class MetricPipeline:
     ) -> None:
         """Compute DE metrics."""
         for name in self._metrics:
+            if name not in registry.list_metrics(MetricType.DE):
+                continue
+
             try:
                 logger.info(f"Computing metric '{name}'")
                 value = registry.compute(name, data)
