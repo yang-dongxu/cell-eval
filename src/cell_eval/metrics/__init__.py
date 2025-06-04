@@ -1,6 +1,6 @@
 """Metrics package for evaluating cell perturbation predictions."""
 
-from .array_metrics import (
+from .anndata_metrics import (
     # MMD,
     # Wasserstein,
     # mse,

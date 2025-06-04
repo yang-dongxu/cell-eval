@@ -3,15 +3,14 @@
 import enum
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Protocol, Union
-from .types import DEComparison, DeltaArrays
+from .types import DEComparison, PerturbationAnndataPair
 
 
 class MetricType(enum.Enum):
     """Types of metrics supported by the registry."""
 
-    ARRAY = "array"
-    DELTA = "delta"
     DE = "de"
+    ANNDATA_PAIR = "anndata_pair"
 
 
 @dataclass
@@ -93,8 +92,8 @@ class MetricRegistry:
     def compute(
         self,
         name: str,
-        data: Union[DeltaArrays, DEComparison],
-    ) -> Union[float, Dict[str, float]]:
+        data: PerturbationAnndataPair | DEComparison,
+    ) -> float | dict[str, float]:
         """
         Compute a metric on the provided data.
 

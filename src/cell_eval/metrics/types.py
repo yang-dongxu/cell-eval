@@ -270,6 +270,7 @@ class PerturbationAnndataPair:
     pred: ad.AnnData
     pert_col: str
     control_pert: str
+    perts: list[str] = field(init=False)
 
     def __post_init__(self) -> None:
         if self.real.shape[1] != self.pred.shape[1]:
