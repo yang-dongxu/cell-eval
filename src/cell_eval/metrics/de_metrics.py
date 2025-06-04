@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, Optional
 
 import numpy as np
+import polars as pl
 from scipy.stats import spearmanr
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 
@@ -162,26 +163,25 @@ class DESpearmanLFC:
         """Compute correlation between log fold changes of significant genes."""
         correlations = {}
 
-        for pert in data.iter_perturbations():
-            merged = data.real.filter_to_significant(
-                fdr_threshold=self.fdr_threshold
-            ).merge(
-                data.pred.data,
-                on=[data.real.target_col, data.real.feature_col],
-                suffixes=("_real", "_pred"),
-                how="inner",
-            )
+        merged = data.real.filter_to_significant(
+            fdr_threshold=self.fdr_threshold
+        ).join(
+            data.pred.data,
+            on=[data.real.target_col, data.real.feature_col],
+            suffix="_pred",
+            how="inner",
+        )
 
-            if merged.shape[0] <= 1:
-                correlations[pert] = np.nan
-                continue
-
-            correlations[pert] = float(
-                spearmanr(
-                    merged[f"{data.real.fold_change_col}_real"],
-                    merged[f"{data.pred.fold_change_col}_pred"],
-                )[0]
-            )
+        for row in merged.group_by(
+            data.real.target_col,
+        ).agg(
+            pl.corr(
+                pl.col(data.real.fold_change_col),
+                pl.col(f"{data.real.fold_change_col}_pred"),
+                method="spearman",
+            ).alias("spearman_corr"),
+        ).iter_rows():
+            correlations.update({row[0]: row[1]})
 
         return correlations
 
