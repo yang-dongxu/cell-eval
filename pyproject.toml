@@ -14,6 +14,7 @@ dependencies = [
     "igraph>=0.11.8",
     "leidenalg>=0.10.2",
     "pdex>=0.1.9",
+    "polars>=1.30.0",
     "pyyaml>=6.0.2",
     "scanpy>=1.10.3",
 ]
