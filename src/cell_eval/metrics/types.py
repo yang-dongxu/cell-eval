@@ -47,10 +47,18 @@ class DEResults:
         if missing:
             raise ValueError(f"Missing required columns: {missing}")
 
-        # Enforce fold_change is float32
-        self.data = self.data.with_columns(
-            pl.col(self.fold_change_col).cast(pl.Float32)
-        )
+        numeric_cols = [
+            self.fold_change_col,
+            self.pvalue_col,
+            self.fdr_col,
+            self.log2_fold_change_col,
+            self.abs_log2_fold_change_col,
+        ]
+
+        categorical_cols = [
+            self.target_col,
+            self.feature_col,
+        ]
 
         # Add log2 fold change columns if not present
         if self.log2_fold_change_col not in self.data.columns:
@@ -65,12 +73,12 @@ class DEResults:
                 .alias(self.abs_log2_fold_change_col)
             )
 
-        # Ensure numeric columns are float32
+        # Enforce types
         self.data = self.data.with_columns(
-            [
-                pl.col(self.pvalue_col).cast(pl.Float32),
-                pl.col(self.fdr_col).cast(pl.Float32),
-            ]
+            [pl.col(c).cast(pl.Float32) for c in numeric_cols]
+            + [pl.col(c).cast(pl.Categorical) for c in categorical_cols]
+        ).drop(
+            [c for c in self.data.columns if c not in numeric_cols + categorical_cols]
         )
 
     def get_perts(self) -> np.ndarray[str]:
@@ -91,20 +99,6 @@ class DEResults:
             .select(self.feature_col)
             .to_numpy()
         )
-
-    def filter_control(self) -> pl.DataFrame:
-        """Return data without control perturbation rows."""
-        return self.data.filter(pl.col(self.target_col) != self.control_pert)
-
-    def sort_by_metric(
-        self,
-        metric: DESortBy,
-        ascending: bool | None = None,
-    ) -> pl.DataFrame:
-        """Sort DE results by specified metric."""
-        if ascending is None:
-            ascending = metric in {DESortBy.PVALUE, DESortBy.FDR}
-        return self.filter_control().sort(metric.value, descending=not ascending)
 
     def filter_to_significant(
         self,
