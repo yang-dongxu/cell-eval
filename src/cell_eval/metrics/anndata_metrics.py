@@ -1,5 +1,8 @@
 """Array metrics module."""
 
+from typing import Callable
+
+import numpy as np
 import sklearn.metrics as skm
 from scipy.stats import pearsonr
 
@@ -14,16 +17,7 @@ from .types import PerturbationAnndataPair
 )
 def pearson_delta(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute Pearson correlation between mean differences from control."""
-
-    res = {}
-    for delta_array in data.iter_delta_arrays():
-        res[delta_array.pert] = float(
-            pearsonr(
-                delta_array.pert_pred.mean(axis=0) - delta_array.ctrl_pred.mean(axis=0),
-                delta_array.pert_real.mean(axis=0) - delta_array.ctrl_real.mean(axis=0),
-            )[0]
-        )
-    return res
+    return _generic_evaluation(data, pearsonr, use_delta=True)
 
 
 @registry.register(
@@ -33,15 +27,7 @@ def pearson_delta(data: PerturbationAnndataPair) -> dict[str, float]:
 )
 def mse(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean squared error of each perturbation from control."""
-    res = {}
-    for delta_array in data.iter_delta_arrays():
-        res[delta_array.pert] = float(
-            skm.mean_squared_error(
-                delta_array.pert_pred.mean(axis=0),
-                delta_array.pert_real.mean(axis=0),
-            )
-        )
-    return res
+    return _generic_evaluation(data, skm.mean_squared_error, use_delta=False)
 
 
 @registry.register(
@@ -51,15 +37,7 @@ def mse(data: PerturbationAnndataPair) -> dict[str, float]:
 )
 def mae(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean absolute error of each perturbation from control."""
-    res = {}
-    for delta_array in data.iter_delta_arrays():
-        res[delta_array.pert] = float(
-            skm.mean_absolute_error(
-                delta_array.pert_pred.mean(axis=0) - delta_array.ctrl_pred.mean(axis=0),
-                delta_array.pert_real.mean(axis=0) - delta_array.ctrl_real.mean(axis=0),
-            )
-        )
-    return res
+    return _generic_evaluation(data, skm.mean_absolute_error, use_delta=False)
 
 
 @registry.register(
@@ -69,15 +47,7 @@ def mae(data: PerturbationAnndataPair) -> dict[str, float]:
 )
 def mse_delta(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean squared error of each perturbation-control delta."""
-    res = {}
-    for delta_array in data.iter_delta_arrays():
-        res[delta_array.pert] = float(
-            skm.mean_squared_error(
-                delta_array.pert_pred.mean(axis=0) - delta_array.ctrl_pred.mean(axis=0),
-                delta_array.pert_real.mean(axis=0) - delta_array.ctrl_real.mean(axis=0),
-            )
-        )
-    return res
+    return _generic_evaluation(data, skm.mean_squared_error, use_delta=True)
 
 
 @registry.register(
@@ -87,12 +57,28 @@ def mse_delta(data: PerturbationAnndataPair) -> dict[str, float]:
 )
 def mae_delta(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean absolute error of each perturbation-control delta."""
+    return _generic_evaluation(data, skm.mean_absolute_error, use_delta=True)
+
+
+def _generic_evaluation(
+    data: PerturbationAnndataPair,
+    func: Callable[[np.ndarray, np.ndarray], float],
+    use_delta: bool = False,
+) -> dict[str, float]:
+    """Generic evaluation function for anndata pair."""
     res = {}
     for delta_array in data.iter_delta_arrays():
-        res[delta_array.pert] = float(
-            skm.mean_absolute_error(
-                delta_array.pert_pred.mean(axis=0) - delta_array.ctrl_pred.mean(axis=0),
-                delta_array.pert_real.mean(axis=0) - delta_array.ctrl_real.mean(axis=0),
-            )
-        )
+        if use_delta:
+            x = delta_array.pert_pred.mean(axis=0) - delta_array.ctrl_pred.mean(axis=0)
+            y = delta_array.pert_real.mean(axis=0) - delta_array.ctrl_real.mean(axis=0)
+        else:
+            x = delta_array.pert_pred.mean(axis=0)
+            y = delta_array.pert_real.mean(axis=0)
+
+        result = func(x, y)
+        if isinstance(result, tuple):
+            result = result[0]
+
+        res[delta_array.pert] = float(result)
+
     return res
