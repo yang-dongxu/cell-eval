@@ -64,7 +64,7 @@ metrics_registry.register(
 metrics_registry.register(
     name="discrimination_score",
     metric_type=MetricType.ANNDATA_PAIR,
-    description="Determines the similarity of each predicted perturbation to the real perturbation via normalized rank of cosine similarity",
+    description="Determines similarity of each pred representation to real via normalized rank of cosine similarity",
     func=discrimination_score,
 )
 metrics_registry.register(
