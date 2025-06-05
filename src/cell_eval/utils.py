@@ -38,22 +38,22 @@ def to_dense(X: Union[np.ndarray, scipy.sparse.spmatrix]) -> np.ndarray:
     return X.toarray() if scipy.sparse.issparse(X) else np.asarray(X)
 
 
-def compute_jaccard(pred: Sequence, real: Sequence, *_args) -> float:
-    """Jaccard index between two sets."""
-    set1, set2 = set(pred), set(real)
-    union = len(set1 | set2)
-    return len(set1 & set2) / union if union else 0.0
+# def compute_jaccard(pred: Sequence, real: Sequence, *_args) -> float:
+#     """Jaccard index between two sets."""
+#     set1, set2 = set(pred), set(real)
+#     union = len(set1 | set2)
+#     return len(set1 & set2) / union if union else 0.0
 
 
-def compute_wasserstein(
-    pred: np.ndarray, real: np.ndarray, *_args, epsilon: float = 0.1
-) -> float:
-    """Sinkhorn transport cost between pred and real point clouds."""
-    geom = PointCloud(pred, real, epsilon=epsilon)
-    prob = LinearProblem(geom)
-    solver = Sinkhorn()
-    result = solver(prob)
-    return float(result.reg_ot_cost)
+# def compute_wasserstein(
+#     pred: np.ndarray, real: np.ndarray, *_args, epsilon: float = 0.1
+# ) -> float:
+#     """Sinkhorn transport cost between pred and real point clouds."""
+#     geom = PointCloud(pred, real, epsilon=epsilon)
+#     prob = LinearProblem(geom)
+#     solver = Sinkhorn()
+#     result = solver(prob)
+#     return float(result.reg_ot_cost)
 
 
 def mmd_distance(x: np.ndarray, y: np.ndarray, gamma: float) -> float:

@@ -1,26 +1,7 @@
-"""Registry module for metric computation."""
-
-from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional, Protocol, Union
+from typing import Callable, Dict, List, Optional
 
 from .._types import DEComparison, MetricType, PerturbationAnndataPair
-
-
-@dataclass
-class MetricInfo:
-    """Information about a registered metric."""
-
-    name: str
-    type: MetricType
-    func: Callable
-    description: str
-    is_class: bool = False
-
-
-class Metric(Protocol):
-    """Protocol for metric functions."""
-
-    def __call__(self, data: Any) -> Union[float, Dict[str, float]]: ...
+from .base import MetricInfo
 
 
 class MetricRegistry:
@@ -30,8 +11,15 @@ class MetricRegistry:
         self.metrics: Dict[str, MetricInfo] = {}
 
     def register(
-        self, name: str, metric_type: MetricType, description: str
-    ) -> Callable[[Metric], Metric]:
+        self,
+        name: str,
+        metric_type: MetricType,
+        description: str,
+        func: Callable[
+            [PerturbationAnndataPair | DEComparison], float | dict[str, float]
+        ],
+        is_class: bool = False,
+    ):
         """
         Register a new metric.
 
@@ -39,28 +27,16 @@ class MetricRegistry:
             name: Unique name for the metric
             metric_type: Type of metric being registered
             description: Description of what the metric computes
-
-        Returns:
-            Decorator function that registers the metric
         """
-
-        def decorator(func: Metric) -> Metric:
-            if name in self.metrics:
-                raise ValueError(f"Metric '{name}' already registered")
-
-            # Check if the metric is a class
-            is_class = isinstance(func, type)
-
-            self.metrics[name] = MetricInfo(
-                name=name,
-                type=metric_type,
-                func=func,
-                description=description,
-                is_class=is_class,
-            )
-            return func
-
-        return decorator
+        if name in self.metrics:
+            raise ValueError(f"Metric '{name}' already registered")
+        self.metrics[name] = MetricInfo(
+            name=name,
+            type=metric_type,
+            func=func,
+            description=description,
+            is_class=is_class,
+        )
 
     def get_metric(self, name: str) -> MetricInfo:
         """Get information about a registered metric."""
@@ -103,7 +79,3 @@ class MetricRegistry:
             instance = metric.func()
             return instance(data)
         return metric.func(data)
-
-
-# Global registry instance
-registry = MetricRegistry()

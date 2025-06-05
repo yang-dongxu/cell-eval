@@ -7,8 +7,7 @@ import numpy as np
 import polars as pl
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 
-from .._types import DEComparison, DESortBy, MetricType
-from .registry import registry
+from .._types import DEComparison, DESortBy
 
 
 @dataclass
@@ -30,11 +29,6 @@ class DEOverlapMetric:
         )
 
 
-@registry.register(
-    name="top_N_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top k DE genes",
-)
 class TopNOverlap(DEOverlapMetric):
     """Compute overlap of top N DE genes."""
 
@@ -42,11 +36,6 @@ class TopNOverlap(DEOverlapMetric):
         super().__init__(k=-1)
 
 
-@registry.register(
-    name="top_50_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top 50 DE genes",
-)
 class Top50Overlap(DEOverlapMetric):
     """Compute overlap of top 50 DE genes."""
 
@@ -54,11 +43,6 @@ class Top50Overlap(DEOverlapMetric):
         super().__init__(k=50)
 
 
-@registry.register(
-    name="top_100_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top 100 DE genes",
-)
 class Top100Overlap(DEOverlapMetric):
     """Compute overlap of top 100 DE genes."""
 
@@ -66,11 +50,6 @@ class Top100Overlap(DEOverlapMetric):
         super().__init__(k=100)
 
 
-@registry.register(
-    name="top_200_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top 200 DE genes",
-)
 class Top200Overlap(DEOverlapMetric):
     """Compute overlap of top 200 DE genes."""
 
@@ -78,11 +57,6 @@ class Top200Overlap(DEOverlapMetric):
         super().__init__(k=200)
 
 
-@registry.register(
-    name="precision_at_50",
-    metric_type=MetricType.DE,
-    description="Precision at 50",
-)
 class PrecisionAt50(DEOverlapMetric):
     """Compute precision at 50."""
 
@@ -90,11 +64,6 @@ class PrecisionAt50(DEOverlapMetric):
         super().__init__(topk=50)
 
 
-@registry.register(
-    name="precision_at_100",
-    metric_type=MetricType.DE,
-    description="Precision at 100",
-)
 class PrecisionAt100(DEOverlapMetric):
     """Compute precision at 100."""
 
@@ -102,11 +71,6 @@ class PrecisionAt100(DEOverlapMetric):
         super().__init__(topk=100)
 
 
-@registry.register(
-    name="precision_at_200",
-    metric_type=MetricType.DE,
-    description="Precision at 200",
-)
 class PrecisionAt200(DEOverlapMetric):
     """Compute precision at 200."""
 
@@ -114,23 +78,6 @@ class PrecisionAt200(DEOverlapMetric):
         super().__init__(topk=200)
 
 
-@registry.register(
-    name="significant_gene_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of all significant DE genes",
-)
-class SignificantGeneOverlap(DEOverlapMetric):
-    """Compute overlap of all significant DE genes."""
-
-    def __init__(self) -> None:
-        super().__init__(k=-1)  # -1 means use all significant genes
-
-
-@registry.register(
-    name="de_spearman_sig",
-    metric_type=MetricType.DE,
-    description="Spearman correlation on number of significant DE genes",
-)
 class DESpearmanSignificant:
     """Compute Spearman correlation on number of significant DE genes."""
 
@@ -178,11 +125,6 @@ class DESpearmanSignificant:
         )
 
 
-@registry.register(
-    name="de_direction_match",
-    metric_type=MetricType.DE,
-    description="Agreement in direction of DE gene changes",
-)
 class DEDirectionMatch:
     """Compute agreement in direction of DE gene changes."""
 
@@ -214,11 +156,6 @@ class DEDirectionMatch:
         return matches
 
 
-@registry.register(
-    name="de_spearman_lfc_sig",
-    metric_type=MetricType.DE,
-    description="Spearman correlation on log fold changes of significant genes",
-)
 class DESpearmanLFC:
     """Compute Spearman correlation on log fold changes of significant genes."""
 
@@ -254,11 +191,6 @@ class DESpearmanLFC:
         return correlations
 
 
-@registry.register(
-    name="de_sig_genes_recall",
-    metric_type=MetricType.DE,
-    description="Recall of significant genes",
-)
 class DESigGenesRecall:
     """Compute recall of significant genes."""
 
@@ -295,11 +227,6 @@ class DESigGenesRecall:
         return {row[0]: row[1] for row in recall_frame.iter_rows()}
 
 
-@registry.register(
-    name="de_nsig_counts",
-    metric_type=MetricType.DE,
-    description="Counts of significant genes",
-)
 class DENsigCounts:
     """Compute counts of significant genes."""
 
@@ -322,11 +249,6 @@ class DENsigCounts:
         return counts
 
 
-@registry.register(
-    name="pr_auc",
-    metric_type=MetricType.DE,
-    description="Computes precision-recall for significant recovery",
-)
 def compute_pr_auc(data: DEComparison) -> float:
     """Compute precision-recall for significant recovery.
 
@@ -339,11 +261,6 @@ def compute_pr_auc(data: DEComparison) -> float:
     return compute_generic_auc(data, method="pr")
 
 
-@registry.register(
-    name="roc_auc",
-    metric_type=MetricType.DE,
-    description="Computes ROC AUC for significant recovery",
-)
 def compute_roc_auc(data: DEComparison) -> float:
     """Compute ROC AUC for significant recovery."""
     return compute_generic_auc(data, method="roc")

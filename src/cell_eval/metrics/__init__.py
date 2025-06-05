@@ -1,6 +1,6 @@
 """Metrics package for evaluating cell perturbation predictions."""
 
-from .anndata_metrics import (
+from ._anndata import (
     discrimination_score,
     mae,
     mae_delta,
@@ -8,7 +8,7 @@ from .anndata_metrics import (
     mse_delta,
     pearson_delta,
 )
-from .de_metrics import (
+from ._de import (
     DEDirectionMatch,
     DENsigCounts,
     DEOverlapMetric,
@@ -18,7 +18,6 @@ from .de_metrics import (
     PrecisionAt50,
     PrecisionAt100,
     PrecisionAt200,
-    SignificantGeneOverlap,
     Top50Overlap,
     Top100Overlap,
     Top200Overlap,
@@ -26,7 +25,8 @@ from .de_metrics import (
     compute_pr_auc,
     compute_roc_auc,
 )
-from .registry import MetricRegistry, registry
+from ._impl import metrics_registry
+from .base import Metric, MetricInfo, MetricResult
 
 __all__ = [
     # Array metrics
@@ -53,7 +53,10 @@ __all__ = [
     "compute_roc_auc",
     "DESigGenesRecall",
     "DENsigCounts",
-    # Registry
-    "MetricRegistry",
-    "registry",
+    # Global registry
+    "metrics_registry",
+    # Base Classes
+    "Metric",
+    "MetricResult",
+    "MetricInfo",
 ]

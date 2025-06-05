@@ -7,65 +7,34 @@ import sklearn.metrics as skm
 from scipy.stats import pearsonr
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .._types import MetricType, PerturbationAnndataPair
-from .registry import registry
+from .._types import PerturbationAnndataPair
 
 
-@registry.register(
-    name="pearson_delta",
-    metric_type=MetricType.ANNDATA_PAIR,
-    description="Pearson correlation between mean differences from control",
-)
 def pearson_delta(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute Pearson correlation between mean differences from control."""
     return _generic_evaluation(data, pearsonr, use_delta=True)
 
 
-@registry.register(
-    name="mse",
-    metric_type=MetricType.ANNDATA_PAIR,
-    description="Mean squared error of each perturbation from control.",
-)
 def mse(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean squared error of each perturbation from control."""
     return _generic_evaluation(data, skm.mean_squared_error, use_delta=False)
 
 
-@registry.register(
-    name="mae",
-    metric_type=MetricType.ANNDATA_PAIR,
-    description="Mean absolute error of each perturbation from control.",
-)
 def mae(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean absolute error of each perturbation from control."""
     return _generic_evaluation(data, skm.mean_absolute_error, use_delta=False)
 
 
-@registry.register(
-    name="mse_delta",
-    metric_type=MetricType.ANNDATA_PAIR,
-    description="Mean squared error of each perturbation-control delta.",
-)
 def mse_delta(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean squared error of each perturbation-control delta."""
     return _generic_evaluation(data, skm.mean_squared_error, use_delta=True)
 
 
-@registry.register(
-    name="mae_delta",
-    metric_type=MetricType.ANNDATA_PAIR,
-    description="Mean absolute error of each perturbation-control delta.",
-)
 def mae_delta(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute mean absolute error of each perturbation-control delta."""
     return _generic_evaluation(data, skm.mean_absolute_error, use_delta=True)
 
 
-@registry.register(
-    name="discrimination_score",
-    metric_type=MetricType.ANNDATA_PAIR,
-    description="Determines the similarity of each predicted perturbation to the real perturbation via normalized rank of cosine similarity",
-)
 def discrimination_score(data: PerturbationAnndataPair) -> dict[str, float]:
     """Compute perturbation discrimination score."""
     real_effects = np.vstack(
