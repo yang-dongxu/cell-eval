@@ -14,17 +14,16 @@ import scipy.sparse
 # from ott.problems.linear.linear_problem import LinearProblem
 # from ott.solvers.linear.sinkhorn import Sinkhorn
 from scipy.sparse import issparse
-from scipy.stats import pearsonr, spearmanr
+from scipy.stats import spearmanr
 from sklearn.metrics import (
     adjusted_mutual_info_score,
     adjusted_rand_score,
     auc,
-    mean_squared_error,
     normalized_mutual_info_score,
     precision_recall_curve,
     roc_curve,
 )
-from sklearn.metrics.pairwise import cosine_similarity, rbf_kernel
+from sklearn.metrics.pairwise import cosine_similarity
 
 from .de_utils import parallel_compute_de
 
@@ -56,71 +55,71 @@ def to_dense(X: Union[np.ndarray, scipy.sparse.spmatrix]) -> np.ndarray:
 #     return float(result.reg_ot_cost)
 
 
-def mmd_distance(x: np.ndarray, y: np.ndarray, gamma: float) -> float:
-    """Compute MMD with RBF kernel for a single gamma."""
-    xx, xy, yy = (
-        rbf_kernel(x, x, gamma),
-        rbf_kernel(x, y, gamma),
-        rbf_kernel(y, y, gamma),
-    )
-    return xx.mean() + yy.mean() - 2 * xy.mean()
+# def mmd_distance(x: np.ndarray, y: np.ndarray, gamma: float) -> float:
+#     """Compute MMD with RBF kernel for a single gamma."""
+#     xx, xy, yy = (
+#         rbf_kernel(x, x, gamma),
+#         rbf_kernel(x, y, gamma),
+#         rbf_kernel(y, y, gamma),
+#     )
+#     return xx.mean() + yy.mean() - 2 * xy.mean()
 
 
-def compute_mmd(
-    pred: np.ndarray, real: np.ndarray, *_args, gammas: Optional[Sequence[float]] = None
-) -> float:
-    """Average MMD over multiple RBF kernel bandwidths."""
-    if gammas is None:
-        gammas = [2, 1, 0.5, 0.1, 0.01, 0.005]
-    scores = []
-    for g in gammas:
-        try:
-            scores.append(mmd_distance(pred, real, g))
-        except ValueError:
-            scores.append(np.nan)
-    return float(np.nanmean(scores))
+# def compute_mmd(
+#     pred: np.ndarray, real: np.ndarray, *_args, gammas: Optional[Sequence[float]] = None
+# ) -> float:
+#     """Average MMD over multiple RBF kernel bandwidths."""
+#     if gammas is None:
+#         gammas = [2, 1, 0.5, 0.1, 0.01, 0.005]
+#     scores = []
+#     for g in gammas:
+#         try:
+#             scores.append(mmd_distance(pred, real, g))
+#         except ValueError:
+#             scores.append(np.nan)
+#     return float(np.nanmean(scores))
 
 
-def compute_mse(pred: np.ndarray, real: np.ndarray, *_args) -> float:
-    """Mean squared error."""
-    return float(mean_squared_error(pred, real))
+# def compute_mse(pred: np.ndarray, real: np.ndarray, *_args) -> float:
+#     """Mean squared error."""
+#     return float(mean_squared_error(pred, real))
 
 
-def compute_pearson(pred: np.ndarray, real: np.ndarray, *_args) -> float:
-    """Mean Pearson correlation across matched batches."""
-    corrs = []
-    for i in range(len(pred)):
-        if i < len(real):
-            corrs.append(np.corrcoef(pred[i], real[i])[0, 1])
-    return float(np.nanmean(corrs))
+# def compute_pearson(pred: np.ndarray, real: np.ndarray, *_args) -> float:
+#     """Mean Pearson correlation across matched batches."""
+#     corrs = []
+#     for i in range(len(pred)):
+#         if i < len(real):
+#             corrs.append(np.corrcoef(pred[i], real[i])[0, 1])
+#     return float(np.nanmean(corrs))
 
 
-def compute_pearson_delta(
-    pred: np.ndarray,
-    real: np.ndarray,
-    ctrl: np.ndarray,
-    pred_ctrl: Optional[np.ndarray] = None,
-    *_args,
-) -> float:
-    """Pearson between mean differences from control."""
-    if pred_ctrl is None:
-        pred_ctrl = ctrl
-    return float(
-        pearsonr(pred.mean(0) - pred_ctrl.mean(0), real.mean(0) - ctrl.mean(0))[0]
-    )
+# def compute_pearson_delta(
+#     pred: np.ndarray,
+#     real: np.ndarray,
+#     ctrl: np.ndarray,
+#     pred_ctrl: Optional[np.ndarray] = None,
+#     *_args,
+# ) -> float:
+#     """Pearson between mean differences from control."""
+#     if pred_ctrl is None:
+#         pred_ctrl = ctrl
+#     return float(
+#         pearsonr(pred.mean(0) - pred_ctrl.mean(0), real.mean(0) - ctrl.mean(0))[0]
+#     )
 
 
-def compute_pearson_delta_batched(
-    batched_means: Dict[str, np.ndarray], *_args
-) -> float:
-    """Pearson on aggregated deltas stored in dict."""
-    pred_de = pd.DataFrame(
-        batched_means["pert_pred"] - batched_means["ctrl_pred"]
-    ).mean(0)
-    real_de = pd.DataFrame(
-        batched_means["pert_real"] - batched_means["ctrl_real"]
-    ).mean(0)
-    return float(pearsonr(pred_de, real_de)[0])
+# def compute_pearson_delta_batched(
+#     batched_means: Dict[str, np.ndarray], *_args
+# ) -> float:
+#     """Pearson on aggregated deltas stored in dict."""
+#     pred_de = pd.DataFrame(
+#         batched_means["pert_pred"] - batched_means["ctrl_pred"]
+#     ).mean(0)
+#     real_de = pd.DataFrame(
+#         batched_means["pert_real"] - batched_means["ctrl_real"]
+#     ).mean(0)
+#     return float(pearsonr(pred_de, real_de)[0])
 
 
 def get_top_k_de(adata: ad.AnnData, k: int) -> list:

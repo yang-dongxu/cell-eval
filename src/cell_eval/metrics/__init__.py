@@ -1,6 +1,7 @@
 """Metrics package for evaluating cell perturbation predictions."""
 
 from ._anndata import (
+    ClusteringAgreement,
     discrimination_score,
     mae,
     mae_delta,
@@ -30,6 +31,7 @@ from .base import Metric, MetricInfo, MetricResult
 
 __all__ = [
     # Array metrics
+    "ClusteringAgreement",
     "pearson_delta",
     "mse",
     "mae",

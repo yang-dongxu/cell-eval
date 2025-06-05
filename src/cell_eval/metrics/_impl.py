@@ -1,5 +1,6 @@
 from .._types import MetricType
 from ._anndata import (
+    ClusteringAgreement,
     discrimination_score,
     mae,
     mae_delta,
@@ -175,4 +176,12 @@ metrics_registry.register(
     metric_type=MetricType.DE,
     description="Computes ROC AUC for significant recovery",
     func=compute_roc_auc,
+)
+
+metrics_registry.register(
+    name="clustering_agreement",
+    metric_type=MetricType.ANNDATA_PAIR,
+    description="Clustering agreement between real and predicted perturbation centroids",
+    func=ClusteringAgreement,
+    is_class=True,
 )
