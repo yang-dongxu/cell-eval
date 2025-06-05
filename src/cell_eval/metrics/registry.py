@@ -1,16 +1,9 @@
 """Registry module for metric computation."""
 
-import enum
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Protocol, Union
-from .types import DEComparison, PerturbationAnndataPair
 
-
-class MetricType(enum.Enum):
-    """Types of metrics supported by the registry."""
-
-    DE = "de"
-    ANNDATA_PAIR = "anndata_pair"
+from .._types import DEComparison, MetricType, PerturbationAnndataPair
 
 
 @dataclass

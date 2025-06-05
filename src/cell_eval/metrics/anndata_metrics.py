@@ -7,8 +7,8 @@ import sklearn.metrics as skm
 from scipy.stats import pearsonr
 from sklearn.metrics.pairwise import cosine_similarity
 
-from .registry import MetricType, registry
-from .types import PerturbationAnndataPair
+from .._types import MetricType, PerturbationAnndataPair
+from .registry import registry
 
 
 @registry.register(

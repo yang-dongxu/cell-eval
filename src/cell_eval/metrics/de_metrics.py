@@ -7,8 +7,8 @@ import numpy as np
 import polars as pl
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 
-from .registry import MetricType, registry
-from .types import DEComparison, DESortBy
+from .._types import DEComparison, DESortBy, MetricType
+from .registry import registry
 
 
 @dataclass

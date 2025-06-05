@@ -26,14 +26,7 @@ from .de_metrics import (
     compute_pr_auc,
     compute_roc_auc,
 )
-from .registry import MetricRegistry, MetricType, registry
-from .types import (
-    DEComparison,
-    DeltaArrays,
-    DEResults,
-    DESortBy,
-    PerturbationAnndataPair,
-)
+from .registry import MetricRegistry, registry
 
 __all__ = [
     # Array metrics
@@ -62,12 +55,5 @@ __all__ = [
     "DENsigCounts",
     # Registry
     "MetricRegistry",
-    "MetricType",
     "registry",
-    # Types
-    "DEComparison",
-    "DEResults",
-    "DESortBy",
-    "DeltaArrays",
-    "PerturbationAnndataPair",
 ]

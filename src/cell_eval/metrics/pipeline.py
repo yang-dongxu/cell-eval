@@ -2,12 +2,13 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
-import polars as pl
 import numpy as np
-from cell_eval.metrics.registry import MetricRegistry, MetricType, registry
-from cell_eval.metrics.types import DEComparison, PerturbationAnndataPair
+import polars as pl
+
+from .._types import DEComparison, MetricType, PerturbationAnndataPair
+from .registry import registry
 
 logger = logging.getLogger(__name__)
 
