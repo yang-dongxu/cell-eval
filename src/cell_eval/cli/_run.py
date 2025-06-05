@@ -1,6 +1,8 @@
 import argparse as ap
+import logging
+import os
 
-import yaml
+logger = logging.getLogger(__name__)
 
 
 def parse_args_run(parser: ap.ArgumentParser):
@@ -8,18 +10,32 @@ def parse_args_run(parser: ap.ArgumentParser):
     CLI for evaluation
     """
     parser.add_argument(
-        "-p",
+        "-ap",
         "--adata-pred",
         type=str,
         help="Path to the predicted adata object to evaluate",
         required=True,
     )
     parser.add_argument(
-        "-r",
+        "-ar",
         "--adata-real",
         type=str,
         help="Path to the real adata object to evaluate against",
         required=True,
+    )
+    parser.add_argument(
+        "-dp",
+        "--de-pred",
+        type=str,
+        help="Path to the predicted DE results (computed with pdex from adata-pred if not provided)",
+        required=False,
+    )
+    parser.add_argument(
+        "-dr",
+        "--de-real",
+        type=str,
+        help="Path to the real DE results (computed with pdex from adata-real if not provided)",
+        required=False,
     )
     parser.add_argument(
         "--control-pert",
@@ -39,11 +55,6 @@ def parse_args_run(parser: ap.ArgumentParser):
         help="Name of the column designated celltype (optional)",
     )
     parser.add_argument(
-        "--output-space",
-        type=str,
-        default="gene",
-    )
-    parser.add_argument(
         "-o",
         "--outdir",
         type=str,
@@ -51,35 +62,21 @@ def parse_args_run(parser: ap.ArgumentParser):
         help="Output directory to write to",
     )
     parser.add_argument(
-        "--skip-dist-metrics",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--skip-de-metrics",
-        action="store_false",
-    )
-    parser.add_argument(
-        "--skip-class-score",
-        action="store_false",
-    )
-    parser.add_argument(
         "--num-threads",
         type=int,
+        default=1,
     )
     parser.add_argument(
         "--batch-size",
         type=int,
+        default=100,
     )
     parser.add_argument(
         "--skip-normlog-check",
         action="store_true",
     )
     parser.add_argument(
-        "--minimal-eval",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--metric",
+        "--de-method",
         type=str,
         default="wilcoxon",
     )
@@ -88,64 +85,90 @@ def parse_args_run(parser: ap.ArgumentParser):
         type=float,
         default=0.05,
     )
-    parser.add_argument(
-        "--config",
-        type=str,
-        help="Sets all options via yaml - ignores CLI if used",
-    )
+
+
+def build_outdir(outdir: str):
+    if os.path.exists(outdir):
+        logger.warning(
+            f"Output directory {outdir} already exists, potential overwrite occurring"
+        )
+    os.makedirs(outdir, exist_ok=True)
 
 
 def run_evaluation(args: ap.ArgumentParser):
-    from ..metric_evaluator import MetricsEvaluator
+    import anndata as ad
+    import polars as pl
+    from pdex import parallel_differential_expression
 
-    print("Reading adata objects")
-    if args.config:
-        # Read in config file
-        with open(args.config, "r") as f:
-            config = yaml.safe_load(f)
+    from cell_eval import (
+        MetricPipeline,
+        PerturbationAnndataPair,
+        initialize_de_comparison,
+    )
 
-        # Create the evaluator
-        evaluator = MetricsEvaluator(
-            path_pred=args.adata_pred,
-            path_real=args.adata_real,
-            include_dist_metrics=config["include_dist_metrics"],
-            control_pert=config["control_pert"],
-            pert_col=config["pert_col"],
-            celltype_col=config["celltype_col"],
-            output_space=config["output_space"],
-            shared_perts=config["shared_perts"],
-            outdir=config["outdir"],
-            de_metric=config["de_metric"],
-            class_score=config["class_score"],
-            n_threads=config["n_threads"] if "n_threads" in config else None,
-            batch_size=config["batch_size"] if "batch_size" in config else None,
-            metric=config["metric"] if "metric" in config else "wilcoxon",
-            skip_normlog_check=config.get("skip_normlog_check", False),
-        )
-    else:
-        evaluator = MetricsEvaluator(
-            path_pred=args.adata_pred,
-            path_real=args.adata_real,
-            include_dist_metrics=args.skip_dist_metrics,
-            control_pert=args.control_pert,
-            pert_col=args.pert_col,
-            celltype_col=args.celltype_col,
-            output_space=args.output_space,
-            outdir=args.outdir,
-            de_metric=args.skip_de_metrics,
-            class_score=args.skip_class_score,
-            n_threads=args.num_threads,
+    build_outdir(args.outdir)
+
+    adata_real = ad.read_h5ad(args.adata_real)
+    adata_pred = ad.read_h5ad(args.adata_pred)
+
+    if not args.de_real:
+        logger.info("Computing DE for real data")
+        de_real = parallel_differential_expression(
+            adata=adata_real,
+            reference=args.control_pert,
+            groupby_key=args.pert_col,
+            metric=args.de_method,
+            num_workers=args.num_threads,
             batch_size=args.batch_size,
-            skip_normlog_check=args.skip_normlog_check,
-            minimal_eval=args.minimal_eval,
-            metric=args.metric,
-            fdr_threshold=args.fdr_threshold,
+            as_polars=True,
+        )
+        de_real.write_csv(os.path.join(args.outdir, "de_real.csv"))
+    else:
+        de_real = pl.read_csv(
+            args.de_real,
+            schema_overrides={
+                "target": pl.Utf8,
+                "feature": pl.Utf8,
+            },
         )
 
-    print("Running evaluation")
-    # Compute the metrics
-    evaluator.compute()
+    if not args.de_pred:
+        logger.info("Computing DE for predicted data")
+        de_pred = parallel_differential_expression(
+            adata=adata_pred,
+            reference=args.control_pert,
+            groupby_key=args.pert_col,
+            metric=args.de_method,
+            num_workers=args.num_threads,
+            batch_size=args.batch_size,
+            as_polars=True,
+        )
+        de_pred.write_csv(os.path.join(args.outdir, "de_pred.csv"))
+    else:
+        de_pred = pl.read_csv(
+            args.de_pred,
+            schema_overrides={
+                "target": pl.Utf8,
+                "feature": pl.Utf8,
+            },
+        )
 
-    # Save the metrics
-    evaluator.save_metrics_per_celltype()
-    print("Done")
+    data_de = initialize_de_comparison(
+        real=de_real,
+        pred=de_pred,
+        target_col="target",
+    )
+
+    data_anndata = PerturbationAnndataPair(
+        real=adata_real,
+        pred=adata_pred,
+        control_pert=args.control_pert,
+        pert_col=args.pert_col,
+    )
+
+    pipeline = MetricPipeline(
+        profile="full",
+    )
+    pipeline.compute_de_metrics(data_de)
+    pipeline.compute_anndata_metrics(data_anndata)
+    pipeline.get_results().write_csv(os.path.join(args.outdir, "results.csv"))
