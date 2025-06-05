@@ -19,6 +19,7 @@ class MetricRegistry:
             [PerturbationAnndataPair | DEComparison], float | dict[str, float]
         ],
         is_class: bool = False,
+        kwargs: dict[str, any] = None,
     ):
         """
         Register a new metric.
@@ -27,6 +28,9 @@ class MetricRegistry:
             name: Unique name for the metric
             metric_type: Type of metric being registered
             description: Description of what the metric computes
+            func: Function to compute the metric
+            is_class: Whether the metric is a class that needs instantiation
+            kwargs: Optional keyword arguments for the metric
         """
         if name in self.metrics:
             raise ValueError(f"Metric '{name}' already registered")
@@ -36,7 +40,20 @@ class MetricRegistry:
             func=func,
             description=description,
             is_class=is_class,
+            kwargs=kwargs,
         )
+
+    def update_metric_kwargs(self, name: str, kwargs: dict[str, any]) -> None:
+        """
+        Update the keyword arguments for a registered metric.
+
+        Args:
+            name: Name of the metric to update
+            kwargs: New keyword arguments to use
+        """
+        if name not in self.metrics:
+            raise KeyError(f"Metric '{name}' not found in registry")
+        self.metrics[name].kwargs.update(kwargs)
 
     def get_metric(self, name: str) -> MetricInfo:
         """Get information about a registered metric."""
@@ -62,6 +79,7 @@ class MetricRegistry:
         self,
         name: str,
         data: PerturbationAnndataPair | DEComparison,
+        kwargs: dict[str, any] = None,
     ) -> float | dict[str, float]:
         """
         Compute a metric on the provided data.
@@ -69,13 +87,19 @@ class MetricRegistry:
         Args:
             name: Name of the metric to compute
             data: Data to compute the metric on
+            kwargs: Optional keyword arguments to override stored kwargs
 
         Returns:
             Metric result, either a single float or dictionary of values
         """
         metric = self.get_metric(name)
+        # Merge stored kwargs with any provided kwargs
+        merged_kwargs = metric.kwargs.copy()
+        if kwargs:
+            merged_kwargs.update(kwargs)
+
         if metric.is_class:
             # Instantiate the class before calling
-            instance = metric.func()
+            instance = metric.func(**merged_kwargs)
             return instance(data)
-        return metric.func(data)
+        return metric.func(data, **merged_kwargs)

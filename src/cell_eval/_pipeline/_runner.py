@@ -14,11 +14,20 @@ class MetricPipeline:
     """Pipeline for computing metrics."""
 
     def __init__(
-        self, profile: Literal["full", "de", "anndata"] | None = "full"
+        self,
+        profile: Literal["full", "de", "anndata"] | None = "full",
+        metric_configs: dict[str, dict[str, any]] | None = None,
     ) -> None:
-        """Initialize pipeline."""
+        """Initialize pipeline.
+
+        Args:
+            profile: Which set of metrics to compute ('full', 'de', 'anndata', or None)
+            metric_configs: Dictionary mapping metric names to their configuration kwargs
+        """
         self._metrics: list[str] = []
         self._results: list[MetricResult] = []
+        self._metric_configs = metric_configs or {}
+
         match profile:
             case "full":
                 self._metrics.extend(metrics_registry.list_metrics(MetricType.DE))
@@ -36,9 +45,26 @@ class MetricPipeline:
             case _:
                 raise ValueError(f"Unrecognized profile: {profile}")
 
-    def add_metrics(self, metrics: list[str]) -> None:
-        """Add metrics to pipeline."""
+        # Apply metric configurations
+        for metric_name, config in self._metric_configs.items():
+            if metric_name in metrics_registry.list_metrics():
+                metrics_registry.update_metric_kwargs(metric_name, config)
+
+    def add_metrics(
+        self, metrics: list[str], configs: dict[str, dict[str, any]] | None = None
+    ) -> None:
+        """Add metrics to pipeline.
+
+        Args:
+            metrics: List of metric names to add
+            configs: Optional dictionary mapping metric names to their configuration kwargs
+        """
         self._metrics.extend(metrics)
+        if configs:
+            self._metric_configs.update(configs)
+            for metric_name, config in configs.items():
+                if metric_name in metrics_registry.list_metrics():
+                    metrics_registry.update_metric_kwargs(metric_name, config)
 
     def _compute_metric(
         self,
@@ -48,7 +74,9 @@ class MetricPipeline:
         """Compute a specific metric."""
         try:
             logger.info(f"Computing metric '{name}'")
-            value = metrics_registry.compute(name, data)
+            # Get any runtime config for this metric
+            runtime_config = self._metric_configs.get(name, {})
+            value = metrics_registry.compute(name, data, kwargs=runtime_config)
             if isinstance(value, dict):
                 # Add each perturbation result separately
                 for pert, pert_value in value.items():

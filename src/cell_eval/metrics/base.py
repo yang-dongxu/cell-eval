@@ -38,3 +38,8 @@ class MetricInfo:
     func: Callable
     description: str
     is_class: bool = False
+    kwargs: dict[str, any] = None
+
+    def __post_init__(self):
+        if self.kwargs is None:
+            self.kwargs = {}
