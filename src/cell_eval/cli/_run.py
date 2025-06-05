@@ -108,13 +108,19 @@ def run_evaluation(args: ap.ArgumentParser):
 
     build_outdir(args.outdir)
 
-    adata_real = ad.read_h5ad(args.adata_real)
-    adata_pred = ad.read_h5ad(args.adata_pred)
+    logger.info(f"Reading real anndata from {args.adata_real}")
+    logger.info(f"Reading pred anndata from {args.adata_pred}")
+    data_anndata = PerturbationAnndataPair(
+        real=ad.read_h5ad(args.adata_real),
+        pred=ad.read_h5ad(args.adata_pred),
+        control_pert=args.control_pert,
+        pert_col=args.pert_col,
+    )
 
     if not args.de_real:
         logger.info("Computing DE for real data")
         de_real = parallel_differential_expression(
-            adata=adata_real,
+            adata=data_anndata.real,
             reference=args.control_pert,
             groupby_key=args.pert_col,
             metric=args.de_method,
@@ -124,6 +130,7 @@ def run_evaluation(args: ap.ArgumentParser):
         )
         de_real.write_csv(os.path.join(args.outdir, "de_real.csv"))
     else:
+        logger.info(f"Reading DE results from {args.de_real}")
         de_real = pl.read_csv(
             args.de_real,
             schema_overrides={
@@ -135,7 +142,7 @@ def run_evaluation(args: ap.ArgumentParser):
     if not args.de_pred:
         logger.info("Computing DE for predicted data")
         de_pred = parallel_differential_expression(
-            adata=adata_pred,
+            adata=data_anndata.pred,
             reference=args.control_pert,
             groupby_key=args.pert_col,
             metric=args.de_method,
@@ -145,6 +152,7 @@ def run_evaluation(args: ap.ArgumentParser):
         )
         de_pred.write_csv(os.path.join(args.outdir, "de_pred.csv"))
     else:
+        logger.info(f"Reading DE results from {args.de_pred}")
         de_pred = pl.read_csv(
             args.de_pred,
             schema_overrides={
@@ -157,13 +165,6 @@ def run_evaluation(args: ap.ArgumentParser):
         real=de_real,
         pred=de_pred,
         target_col="target",
-    )
-
-    data_anndata = PerturbationAnndataPair(
-        real=adata_real,
-        pred=adata_pred,
-        control_pert=args.control_pert,
-        pert_col=args.pert_col,
     )
 
     pipeline = MetricPipeline(
