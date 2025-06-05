@@ -4,6 +4,7 @@ import os
 from typing import Literal
 
 import anndata as ad
+import numpy as np
 import polars as pl
 from pdex import parallel_differential_expression
 
@@ -30,6 +31,7 @@ class MetricsEvaluator:
         num_threads: int = -1,
         batch_size: int = 100,
         outdir: str = "./cell-eval-outdir",
+        allow_discrete: bool = False,
     ):
         if os.path.exists(outdir):
             logger.warning(
@@ -42,6 +44,7 @@ class MetricsEvaluator:
             pred=adata_pred,
             control_pert=control_pert,
             pert_col=pert_col,
+            allow_discrete=allow_discrete,
         )
         self.de_comparison = _build_de_comparison(
             anndata_pair=self.anndata_pair,
@@ -70,6 +73,8 @@ def _build_anndata_pair(
     pred: ad.AnnData | str,
     control_pert: str,
     pert_col: str,
+    allow_discrete: bool = False,
+    n_cells: int = 100,
 ):
     if isinstance(real, str):
         logger.info(f"Reading real anndata from {real}")
@@ -77,9 +82,37 @@ def _build_anndata_pair(
     if isinstance(pred, str):
         logger.info(f"Reading pred anndata from {pred}")
         pred = ad.read_h5ad(pred)
+
+    # Validate that the input is normalized and log-transformed
+    _validate_normlog(adata=real, allow_discrete=allow_discrete, n_cells=n_cells)
+    _validate_normlog(adata=pred, allow_discrete=allow_discrete, n_cells=n_cells)
+
+    # Build the anndata pair
     return PerturbationAnndataPair(
         real=real, pred=pred, control_pert=control_pert, pert_col=pert_col
     )
+
+
+def _validate_normlog(
+    adata: ad.AnnData, n_cells: int = 100, allow_discrete: bool = False
+):
+    def suspected_discrete(x: np.ndarray, n_cells: int) -> bool:
+        top_n = min(x.shape[0], n_cells)
+        rowsum = x[:top_n].sum(axis=1)
+        frac, _ = np.modf(rowsum)
+        return np.all(frac == 0)
+
+    if suspected_discrete(adata.X, n_cells):
+        if allow_discrete:
+            logger.warning(
+                "Error: adata_pred appears not to be log-transformed. We expect normed+logged input"
+                "If this is an error, rerun with `allow_discrete=True`"
+            )
+            return
+        raise ValueError(
+            "Error: adata_pred appears not to be log-transformed. We expect normed+logged input"
+            "If this is an error, rerun with `allow_discrete=True`"
+        )
 
 
 def _build_de_comparison(
