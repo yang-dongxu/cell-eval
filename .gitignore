@@ -9,3 +9,4 @@ notebooks/*
 output/*
 *.h5ad
 dist/
+cell-eval-outdir/*
