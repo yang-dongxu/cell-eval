@@ -1,5 +1,5 @@
 import logging
-from typing import Literal
+from typing import Callable, Literal
 
 import numpy as np
 import polars as pl
@@ -65,6 +65,47 @@ class MetricPipeline:
             for metric_name, config in configs.items():
                 if metric_name in metrics_registry.list_metrics():
                     metrics_registry.update_metric_kwargs(metric_name, config)
+
+    def add_metric(
+        self,
+        name: str,
+        metric_type: MetricType,
+        description: str,
+        func: Callable[
+            [PerturbationAnndataPair | DEComparison], float | dict[str, float]
+        ],
+        is_class: bool = False,
+        kwargs: dict[str, any] = None,
+    ) -> None:
+        """Register a new metric and add it to the pipeline.
+
+        Args:
+            name: Unique name for the metric
+            metric_type: Type of metric being registered
+            description: Description of what the metric computes
+            func: Function to compute the metric
+            is_class: Whether the metric is a class that needs instantiation
+            kwargs: Optional keyword arguments for the metric
+        """
+        if name in metrics_registry.list_metrics():
+            logger.warning(
+                f"Metric '{name}' already registered, skipping re-registering"
+            )
+            return
+        # Register the metric with the registry
+        metrics_registry.register(
+            name=name,
+            metric_type=metric_type,
+            description=description,
+            func=func,
+            is_class=is_class,
+            kwargs=kwargs,
+        )
+        # Add it to the pipeline's metrics list
+        self._metrics.append(name)
+        # Add any kwargs to the metric configs
+        if kwargs:
+            self._metric_configs[name] = kwargs
 
     def _compute_metric(
         self,
