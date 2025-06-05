@@ -1,4 +1,5 @@
 import logging
+import multiprocessing as mp
 import os
 from typing import Literal
 
@@ -26,7 +27,7 @@ class MetricsEvaluator:
         control_pert: str = "non-targeting",
         pert_col: str = "target",
         de_method: str = "wilcoxon",
-        num_threads: int = 1,
+        num_threads: int = -1,
         batch_size: int = 100,
         outdir: str = "./cell-eval-outdir",
     ):
@@ -47,7 +48,7 @@ class MetricsEvaluator:
             de_pred=de_pred,
             de_real=de_real,
             de_method=de_method,
-            num_threads=num_threads,
+            num_threads=num_threads if num_threads != -1 else mp.cpu_count(),
             batch_size=batch_size,
             outdir=outdir,
         )
