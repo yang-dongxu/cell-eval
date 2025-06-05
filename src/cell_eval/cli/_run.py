@@ -96,80 +96,19 @@ def build_outdir(outdir: str):
 
 
 def run_evaluation(args: ap.ArgumentParser):
-    import anndata as ad
-    import polars as pl
-    from pdex import parallel_differential_expression
+    from cell_eval import MetricsEvaluator
 
-    from cell_eval import (
-        MetricPipeline,
-        PerturbationAnndataPair,
-        initialize_de_comparison,
-    )
-
-    build_outdir(args.outdir)
-
-    logger.info(f"Reading real anndata from {args.adata_real}")
-    logger.info(f"Reading pred anndata from {args.adata_pred}")
-    data_anndata = PerturbationAnndataPair(
-        real=ad.read_h5ad(args.adata_real),
-        pred=ad.read_h5ad(args.adata_pred),
+    evaluator = MetricsEvaluator(
+        adata_pred=args.adata_pred,
+        adata_real=args.adata_real,
+        de_pred=args.de_pred,
+        de_real=args.de_real,
         control_pert=args.control_pert,
         pert_col=args.pert_col,
+        de_method=args.de_method,
+        num_threads=args.num_threads,
+        batch_size=args.batch_size,
+        outdir=args.outdir,
     )
-
-    if not args.de_real:
-        logger.info("Computing DE for real data")
-        de_real = parallel_differential_expression(
-            adata=data_anndata.real,
-            reference=args.control_pert,
-            groupby_key=args.pert_col,
-            metric=args.de_method,
-            num_workers=args.num_threads,
-            batch_size=args.batch_size,
-            as_polars=True,
-        )
-        de_real.write_csv(os.path.join(args.outdir, "de_real.csv"))
-    else:
-        logger.info(f"Reading DE results from {args.de_real}")
-        de_real = pl.read_csv(
-            args.de_real,
-            schema_overrides={
-                "target": pl.Utf8,
-                "feature": pl.Utf8,
-            },
-        )
-
-    if not args.de_pred:
-        logger.info("Computing DE for predicted data")
-        de_pred = parallel_differential_expression(
-            adata=data_anndata.pred,
-            reference=args.control_pert,
-            groupby_key=args.pert_col,
-            metric=args.de_method,
-            num_workers=args.num_threads,
-            batch_size=args.batch_size,
-            as_polars=True,
-        )
-        de_pred.write_csv(os.path.join(args.outdir, "de_pred.csv"))
-    else:
-        logger.info(f"Reading DE results from {args.de_pred}")
-        de_pred = pl.read_csv(
-            args.de_pred,
-            schema_overrides={
-                "target": pl.Utf8,
-                "feature": pl.Utf8,
-            },
-        )
-
-    data_de = initialize_de_comparison(
-        real=de_real,
-        pred=de_pred,
-        target_col="target",
-    )
-
-    pipeline = MetricPipeline(
-        profile="full",
-    )
-    pipeline.compute_de_metrics(data_de)
-    pipeline.compute_anndata_metrics(data_anndata)
-    pipeline.get_results().write_csv(os.path.join(args.outdir, "results.csv"))
+    results = evaluator.compute(profile="full")
+    results.write_csv(os.path.join(args.outdir, "results.csv"))

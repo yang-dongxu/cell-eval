@@ -1,3 +1,4 @@
+from ._evaluator import MetricsEvaluator
 from ._pipeline import MetricPipeline
 from ._types import (
     DEComparison,
