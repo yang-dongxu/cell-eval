@@ -40,6 +40,52 @@ class MetricPipeline:
         """Add metrics to pipeline."""
         self._metrics.extend(metrics)
 
+    def _compute_metric(
+        self,
+        name: str,
+        data: DEComparison | PerturbationAnndataPair,
+        celltype: str | None = None,
+    ):
+        """Compute a specific metric."""
+        try:
+            logger.info(f"Computing metric '{name}'")
+            value = metrics_registry.compute(name, data)
+            if isinstance(value, dict):
+                # Add each perturbation result separately
+                for pert, pert_value in value.items():
+                    if isinstance(pert_value, dict):
+                        for sub_name, value in pert_value.items():
+                            self._results.append(
+                                MetricResult(
+                                    name=f"{name}_{sub_name}",
+                                    value=value,
+                                    celltype=celltype,
+                                    perturbation=pert,
+                                )
+                            )
+                    else:
+                        self._results.append(
+                            MetricResult(
+                                name=name,
+                                value=pert_value,
+                                celltype=celltype,
+                                perturbation=pert,
+                            )
+                        )
+            else:
+                # Add single result to all perturbations
+                for pert in data.real.get_perts():
+                    self._results.append(
+                        MetricResult(
+                            name=name,
+                            value=value,
+                            celltype=celltype,
+                            perturbation=pert,
+                        )
+                    )
+        except Exception as e:
+            logger.error(f"Error computing metric '{name}': {e}")
+
     def compute_de_metrics(
         self, data: DEComparison, celltype: str | None = None
     ) -> None:
@@ -47,46 +93,7 @@ class MetricPipeline:
         for name in self._metrics:
             if name not in metrics_registry.list_metrics(MetricType.DE):
                 continue
-
-            try:
-                logger.info(f"Computing metric '{name}'")
-                value = metrics_registry.compute(name, data)
-                if isinstance(value, dict):
-                    # Add each perturbation result separately
-                    for pert, pert_value in value.items():
-                        if isinstance(pert_value, dict):
-                            for sub_name, value in pert_value.items():
-                                self._results.append(
-                                    MetricResult(
-                                        name=f"{name}_{sub_name}",
-                                        value=value,
-                                        celltype=celltype,
-                                        perturbation=pert,
-                                    )
-                                )
-                        else:
-                            self._results.append(
-                                MetricResult(
-                                    name=name,
-                                    value=pert_value,
-                                    celltype=celltype,
-                                    perturbation=pert,
-                                )
-                            )
-                else:
-                    # Add single result to all perturbations
-                    for pert in data.real.get_perts():
-                        self._results.append(
-                            MetricResult(
-                                name=name,
-                                value=value,
-                                celltype=celltype,
-                                perturbation=pert,
-                            )
-                        )
-            except Exception as e:
-                logger.error(f"Error computing metric '{name}': {e}")
-                continue
+            self._compute_metric(name, data, celltype)
 
     def compute_anndata_metrics(
         self, data: PerturbationAnndataPair, celltype: str | None = None
@@ -95,44 +102,7 @@ class MetricPipeline:
         for name in self._metrics:
             if name not in metrics_registry.list_metrics(MetricType.ANNDATA_PAIR):
                 continue
-
-            try:
-                logger.info(f"Computing metric '{name}'")
-                value = metrics_registry.compute(name, data)
-                if isinstance(value, dict):
-                    # Add each perturbation result separately
-                    for pert, pert_value in value.items():
-                        if isinstance(pert_value, dict):
-                            for sub_name, value in pert_value.items():
-                                self._results.append(
-                                    MetricResult(
-                                        name=f"{name}_{sub_name}",
-                                        value=value,
-                                        celltype=celltype,
-                                        perturbation=pert,
-                                    )
-                                )
-                        else:
-                            self._results.append(
-                                MetricResult(
-                                    name=name,
-                                    value=pert_value,
-                                    celltype=celltype,
-                                    perturbation=pert,
-                                )
-                            )
-                else:
-                    # Add single result
-                    self._results.append(
-                        MetricResult(
-                            name=name,
-                            value=value,
-                            celltype=celltype,
-                        )
-                    )
-            except Exception as e:
-                logger.error(f"Error computing metric '{name}': {e}")
-                continue
+            self._compute_metric(name, data, celltype)
 
     def get_results(self) -> pl.DataFrame:
         """Get results as a DataFrame."""
