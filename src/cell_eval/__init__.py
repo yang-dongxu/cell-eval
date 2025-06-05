@@ -8,7 +8,6 @@ from ._types import (
     PerturbationAnndataPair,
     initialize_de_comparison,
 )
-from .metric_evaluator import MetricsEvaluator
 from .metrics import metrics_registry
 
 __all__ = [
