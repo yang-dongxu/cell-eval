@@ -74,7 +74,7 @@ class MetricPipeline:
                         )
             else:
                 # Add single result to all perturbations
-                for pert in data.real.get_perts():
+                for pert in data.get_perts(include_control=False):
                     self._results.append(
                         MetricResult(
                             name=name,

@@ -2,6 +2,7 @@
 
 from typing import Callable, Literal, Sequence
 
+import anndata as ad
 import numpy as np
 import pandas as pd
 import scanpy as sc
@@ -134,7 +135,7 @@ class ClusteringAgreement:
 
     @staticmethod
     def _cluster_leiden(
-        adata: sc.AnnData,
+        adata: ad.AnnData,
         resolution: float,
         key_added: str,
         n_neighbors: int = 15,
@@ -149,10 +150,11 @@ class ClusteringAgreement:
 
     @staticmethod
     def _centroid_ann(
-        adata: sc.AnnData,
+        adata: ad.AnnData,
         category_key: str,
+        control_pert: str,
         embed_key: str | None = None,
-    ) -> sc.AnnData:
+    ) -> ad.AnnData:
         # Isolate the features
         feats = adata.obsm.get(embed_key, adata.X)
 
@@ -169,25 +171,26 @@ class ClusteringAgreement:
         centroids = np.zeros((uniq.size, feats.shape[1]), dtype=feats.dtype)
         np.add.at(centroids, inv, feats)
         centroids /= np.bincount(inv)[:, None]
-        adc = sc.AnnData(X=centroids)
+        adc = ad.AnnData(X=centroids)
         adc.obs[category_key] = uniq
-        return adc
+        return adc[adc.obs[category_key] != control_pert]
 
     def __call__(self, data: PerturbationAnndataPair) -> float:
-        # 1. check same perturbation categories
-        real_cats = set(data.real.obs[data.pert_col])
-        pred_cats = set(data.pred.obs[data.pert_col])
-        if real_cats != pred_cats:
-            raise ValueError(
-                f"Perturbation categories mismatch:\n"
-                f"  only-in-real : {sorted(real_cats - pred_cats)}\n"
-                f"  only-in-pred : {sorted(pred_cats - real_cats)}"
-            )
-        cats_sorted = sorted(real_cats)
+        cats_sorted = sorted([c for c in data.perts if c != data.control_pert])
 
         # 2. build centroids
-        ad_real_cent = self._centroid_ann(data.real, data.pert_col, self.embed_key)
-        ad_pred_cent = self._centroid_ann(data.pred, data.pert_col, self.embed_key)
+        ad_real_cent = self._centroid_ann(
+            adata=data.real,
+            category_key=data.pert_col,
+            control_pert=data.control_pert,
+            embed_key=self.embed_key,
+        )
+        ad_pred_cent = self._centroid_ann(
+            adata=data.pred,
+            category_key=data.pert_col,
+            control_pert=data.control_pert,
+            embed_key=self.embed_key,
+        )
 
         # 3. cluster real once
         real_key = "real_clusters"

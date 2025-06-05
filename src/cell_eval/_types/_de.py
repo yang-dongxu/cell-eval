@@ -1,3 +1,4 @@
+import logging
 from dataclasses import dataclass, field
 from functools import partial
 from typing import Iterator, Optional
@@ -6,6 +7,8 @@ import numpy as np
 import polars as pl
 
 from ._enums import DESortBy
+
+logger = logging.getLogger(__name__)
 
 
 def initialize_de_comparison(
@@ -162,7 +165,7 @@ class DEComparison:
     real: DEResults
     pred: DEResults
 
-    perturbations: list[str] = field(init=False)
+    perturbations: np.ndarray[str] = field(init=False)
     n_perts: int = field(init=False)
 
     def __post_init__(self) -> None:
@@ -179,6 +182,12 @@ class DEComparison:
     def iter_perturbations(self) -> Iterator[str]:
         for pert in self.perturbations:
             yield pert
+
+    def get_perts(self, include_control: bool = False) -> np.ndarray[str]:
+        """Get perturbations."""
+        if include_control:
+            logger.warning("DEComparison should not include control perturbation")
+        return self.perturbations
 
     def compute_overlap(
         self,

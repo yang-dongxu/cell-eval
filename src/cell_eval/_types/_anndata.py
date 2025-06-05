@@ -13,7 +13,7 @@ class PerturbationAnndataPair:
     pred: ad.AnnData
     pert_col: str
     control_pert: str
-    perts: list[str] = field(init=False)
+    perts: np.ndarray[str] = field(init=False)
 
     def __post_init__(self) -> None:
         if self.real.shape[1] != self.pred.shape[1]:
@@ -31,6 +31,12 @@ class PerturbationAnndataPair:
         perts = np.union1d(perts_real, perts_pred)
         perts = np.array([p for p in perts if p != self.control_pert])
         object.__setattr__(self, "perts", perts)
+
+    def get_perts(self, include_control: bool = False) -> np.ndarray[str]:
+        """Get all perturbations."""
+        if include_control:
+            return self.perts
+        return self.perts[self.perts != self.control_pert]
 
     def build_delta_array(self, pert: str) -> "DeltaArrays":
         """Build delta array for a perturbation."""
