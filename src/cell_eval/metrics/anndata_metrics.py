@@ -4,6 +4,7 @@ from typing import Callable
 
 import numpy as np
 import sklearn.metrics as skm
+from sklearn.metrics.pairwise import cosine_similarity
 from scipy.stats import pearsonr
 
 from .registry import MetricType, registry
@@ -60,6 +61,45 @@ def mae_delta(data: PerturbationAnndataPair) -> dict[str, float]:
     return _generic_evaluation(data, skm.mean_absolute_error, use_delta=True)
 
 
+@registry.register(
+    name="discrimination_score",
+    metric_type=MetricType.ANNDATA_PAIR,
+    description="Determines the similarity of each predicted perturbation to the real perturbation via normalized rank of cosine similarity",
+)
+def discrimination_score(data: PerturbationAnndataPair) -> dict[str, float]:
+    """Compute perturbation discrimination score."""
+    real_effects = np.vstack(
+        [
+            d.perturbation_effect(which="real", abs=True)
+            for d in data.iter_delta_arrays()
+        ]
+    )
+    pred_effects = np.vstack(
+        [
+            d.perturbation_effect(which="pred", abs=True)
+            for d in data.iter_delta_arrays()
+        ]
+    )
+    gene_names = data.real.var_names
+    norm_ranks = {}
+    for p_idx, p in enumerate(data.perts):
+        include_mask = np.flatnonzero(gene_names != p)
+        sim = cosine_similarity(
+            real_effects[p_idx, include_mask].reshape(
+                1, -1
+            ),  # select real effect for current perturbation
+            pred_effects[
+                :, include_mask
+            ],  # compare to all predicted effects across perturbations
+        ).flatten()
+        sorted_rev = np.argsort(sim)[::-1]
+        p_index = np.flatnonzero(data.perts == p)[0]
+        rank = np.flatnonzero(sorted_rev == p_index)[0]
+        norm_rank = rank / data.perts.size
+        norm_ranks[str(p)] = norm_rank
+    return norm_ranks
+
+
 def _generic_evaluation(
     data: PerturbationAnndataPair,
     func: Callable[[np.ndarray, np.ndarray], float],
@@ -69,8 +109,8 @@ def _generic_evaluation(
     res = {}
     for delta_array in data.iter_delta_arrays():
         if use_delta:
-            x = delta_array.pert_pred.mean(axis=0) - delta_array.ctrl_pred.mean(axis=0)
-            y = delta_array.pert_real.mean(axis=0) - delta_array.ctrl_real.mean(axis=0)
+            x = delta_array.perturbation_effect(which="pred", abs=False)
+            y = delta_array.perturbation_effect(which="real", abs=False)
         else:
             x = delta_array.pert_pred.mean(axis=0)
             y = delta_array.pert_real.mean(axis=0)

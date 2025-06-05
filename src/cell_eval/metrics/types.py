@@ -2,7 +2,7 @@
 
 import enum
 from dataclasses import dataclass, field
-from typing import Dict, Iterator, Optional, TypeVar
+from typing import Dict, Iterator, Literal, Optional, TypeVar
 
 import anndata as ad
 import numpy as np
@@ -286,6 +286,7 @@ class PerturbationAnndataPair:
                 f"Perturbation mismatch: real {perts_real} != pred {perts_pred}"
             )
         perts = np.union1d(perts_real, perts_pred)
+        perts = np.array([p for p in perts if p != self.control_pert])
         object.__setattr__(self, "perts", perts)
 
     def build_delta_array(self, pert: str) -> "DeltaArrays":
@@ -305,8 +306,6 @@ class PerturbationAnndataPair:
     def iter_delta_arrays(self) -> Iterator["DeltaArrays"]:
         """Iterate over delta arrays for all perturbations."""
         for pert in self.perts:
-            if pert == self.control_pert:
-                continue
             yield self.build_delta_array(pert)
 
 
@@ -332,3 +331,17 @@ class DeltaArrays:
 
         if len(set(shapes.values())) > 1:
             raise ValueError(f"Shape mismatch in arrays: {shapes}")
+
+    def perturbation_effect(
+        self, which: Literal["real", "pred"] = "real", abs: bool = False
+    ) -> np.ndarray:
+        match which:
+            case "real":
+                effect = self.pert_real.mean(axis=0) - self.ctrl_real.mean(axis=0)
+            case "pred":
+                effect = self.pert_pred.mean(axis=0) - self.ctrl_pred.mean(axis=0)
+            case _:
+                raise ValueError(f"Invalid which: {which}")
+        if abs:
+            effect = np.abs(effect)
+        return effect
