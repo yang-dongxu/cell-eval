@@ -38,24 +38,45 @@ class PerturbationAnndataPair:
             return self.perts
         return self.perts[self.perts != self.control_pert]
 
-    def build_delta_array(self, pert: str) -> "DeltaArrays":
+    def build_delta_array(
+        self, pert: str, embed_key: str | None = None
+    ) -> "DeltaArrays":
         """Build delta array for a perturbation."""
-        pert_real = self.real.X[self.real.obs[self.pert_col] == pert, :]
-        pert_pred = self.pred.X[self.pred.obs[self.pert_col] == pert, :]
-        ctrl_real = self.real.X[self.real.obs[self.pert_col] == self.control_pert, :]
-        ctrl_pred = self.pred.X[self.pred.obs[self.pert_col] == self.control_pert, :]
+        mask_pert_real = self.real.obs[self.pert_col] == pert
+        mask_pert_pred = self.pred.obs[self.pert_col] == pert
+        mask_ctrl_real = self.real.obs[self.pert_col] == self.control_pert
+        mask_ctrl_pred = self.pred.obs[self.pert_col] == self.control_pert
+
+        if not embed_key:
+            pert_real = self.real.X[mask_pert_real, :]
+            pert_pred = self.pred.X[mask_pert_pred, :]
+            ctrl_real = self.real.X[mask_ctrl_real, :]
+            ctrl_pred = self.pred.X[mask_ctrl_pred, :]
+        else:
+            if embed_key not in self.real.obsm:
+                raise ValueError(f"Embed key {embed_key} not found in real AnnData")
+            if embed_key not in self.pred.obsm:
+                raise ValueError(f"Embed key {embed_key} not found in pred AnnData")
+            pert_real = self.real.obsm[embed_key][mask_pert_real, :]
+            pert_pred = self.pred.obsm[embed_key][mask_pert_pred, :]
+            ctrl_real = self.real.obsm[embed_key][mask_ctrl_real, :]
+            ctrl_pred = self.pred.obsm[embed_key][mask_ctrl_pred, :]
+
         return DeltaArrays(
             pert=pert,
             pert_real=pert_real,
             pert_pred=pert_pred,
             ctrl_real=ctrl_real,
             ctrl_pred=ctrl_pred,
+            embed_key=embed_key,
         )
 
-    def iter_delta_arrays(self) -> Iterator["DeltaArrays"]:
+    def iter_delta_arrays(
+        self, embed_key: str | None = None
+    ) -> Iterator["DeltaArrays"]:
         """Iterate over delta arrays for all perturbations."""
         for pert in self.perts:
-            yield self.build_delta_array(pert)
+            yield self.build_delta_array(pert, embed_key=embed_key)
 
 
 @dataclass(frozen=True)
@@ -67,6 +88,7 @@ class DeltaArrays:
     pert_pred: np.ndarray
     ctrl_real: np.ndarray
     ctrl_pred: Optional[np.ndarray] = None
+    embed_key: str | None = None
 
     def __post_init__(self) -> None:
         # Validate shapes match (only number of genes)

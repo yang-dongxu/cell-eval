@@ -19,49 +19,74 @@ from sklearn.metrics.pairwise import cosine_similarity
 from .._types import PerturbationAnndataPair
 
 
-def pearson_delta(data: PerturbationAnndataPair) -> dict[str, float]:
+def pearson_delta(
+    data: PerturbationAnndataPair, embed_key: str | None = None
+) -> dict[str, float]:
     """Compute Pearson correlation between mean differences from control."""
-    return _generic_evaluation(data, pearsonr, use_delta=True)
+    return _generic_evaluation(data, pearsonr, use_delta=True, embed_key=embed_key)
 
 
-def mse(data: PerturbationAnndataPair) -> dict[str, float]:
+def mse(
+    data: PerturbationAnndataPair, embed_key: str | None = None
+) -> dict[str, float]:
     """Compute mean squared error of each perturbation from control."""
-    return _generic_evaluation(data, skm.mean_squared_error, use_delta=False)
+    return _generic_evaluation(
+        data, skm.mean_squared_error, use_delta=False, embed_key=embed_key
+    )
 
 
-def mae(data: PerturbationAnndataPair) -> dict[str, float]:
+def mae(
+    data: PerturbationAnndataPair, embed_key: str | None = None
+) -> dict[str, float]:
     """Compute mean absolute error of each perturbation from control."""
-    return _generic_evaluation(data, skm.mean_absolute_error, use_delta=False)
+    return _generic_evaluation(
+        data, skm.mean_absolute_error, use_delta=False, embed_key=embed_key
+    )
 
 
-def mse_delta(data: PerturbationAnndataPair) -> dict[str, float]:
+def mse_delta(
+    data: PerturbationAnndataPair, embed_key: str | None = None
+) -> dict[str, float]:
     """Compute mean squared error of each perturbation-control delta."""
-    return _generic_evaluation(data, skm.mean_squared_error, use_delta=True)
+    return _generic_evaluation(
+        data, skm.mean_squared_error, use_delta=True, embed_key=embed_key
+    )
 
 
-def mae_delta(data: PerturbationAnndataPair) -> dict[str, float]:
+def mae_delta(
+    data: PerturbationAnndataPair, embed_key: str | None = None
+) -> dict[str, float]:
     """Compute mean absolute error of each perturbation-control delta."""
-    return _generic_evaluation(data, skm.mean_absolute_error, use_delta=True)
+    return _generic_evaluation(
+        data, skm.mean_absolute_error, use_delta=True, embed_key=embed_key
+    )
 
 
-def discrimination_score(data: PerturbationAnndataPair) -> dict[str, float]:
+def discrimination_score(
+    data: PerturbationAnndataPair, embed_key: str | None = None
+) -> dict[str, float]:
     """Compute perturbation discrimination score."""
     real_effects = np.vstack(
         [
             d.perturbation_effect(which="real", abs=True)
-            for d in data.iter_delta_arrays()
+            for d in data.iter_delta_arrays(embed_key=embed_key)
         ]
     )
     pred_effects = np.vstack(
         [
             d.perturbation_effect(which="pred", abs=True)
-            for d in data.iter_delta_arrays()
+            for d in data.iter_delta_arrays(embed_key=embed_key)
         ]
     )
     gene_names = data.real.var_names
     norm_ranks = {}
     for p_idx, p in enumerate(data.perts):
-        include_mask = np.flatnonzero(gene_names != p)
+        # If no embed key, use gene names to exclude target gene
+        if not embed_key:
+            include_mask = np.flatnonzero(gene_names != p)
+        else:
+            include_mask = np.ones(real_effects.shape[1], dtype=bool)
+
         sim = cosine_similarity(
             real_effects[p_idx, include_mask].reshape(
                 1, -1
@@ -82,10 +107,11 @@ def _generic_evaluation(
     data: PerturbationAnndataPair,
     func: Callable[[np.ndarray, np.ndarray], float],
     use_delta: bool = False,
+    embed_key: str | None = None,
 ) -> dict[str, float]:
     """Generic evaluation function for anndata pair."""
     res = {}
-    for delta_array in data.iter_delta_arrays():
+    for delta_array in data.iter_delta_arrays(embed_key=embed_key):
         if use_delta:
             x = delta_array.perturbation_effect(which="pred", abs=False)
             y = delta_array.perturbation_effect(which="real", abs=False)
