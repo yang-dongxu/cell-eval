@@ -1,10 +1,11 @@
 """Metrics package for evaluating cell perturbation predictions."""
 
 from .anndata_metrics import (
-    # MMD,
-    # Wasserstein,
-    # mse,
-    # pearson_correlation,
+    discrimination_score,
+    mae,
+    mae_delta,
+    mse,
+    mse_delta,
     pearson_delta,
 )
 from .de_metrics import (
@@ -14,14 +15,14 @@ from .de_metrics import (
     DESigGenesRecall,
     DESpearmanLFC,
     DESpearmanSignificant,
+    PrecisionAt50,
+    PrecisionAt100,
+    PrecisionAt200,
     SignificantGeneOverlap,
     Top50Overlap,
     Top100Overlap,
     Top200Overlap,
     TopNOverlap,
-    PrecisionAt50,
-    PrecisionAt100,
-    PrecisionAt200,
     compute_pr_auc,
     compute_roc_auc,
 )
@@ -36,11 +37,12 @@ from .types import (
 
 __all__ = [
     # Array metrics
-    # "MMD",
-    # "Wasserstein",
-    # "mse",
-    # "pearson_correlation",
     "pearson_delta",
+    "mse",
+    "mae",
+    "mse_delta",
+    "mae_delta",
+    "discrimination_score",
     # DE metrics
     "DEDirectionMatch",
     "DEOverlapMetric",

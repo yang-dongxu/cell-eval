@@ -4,8 +4,8 @@ from typing import Callable
 
 import numpy as np
 import sklearn.metrics as skm
-from sklearn.metrics.pairwise import cosine_similarity
 from scipy.stats import pearsonr
+from sklearn.metrics.pairwise import cosine_similarity
 
 from .registry import MetricType, registry
 from .types import PerturbationAnndataPair

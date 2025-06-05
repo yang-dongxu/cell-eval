@@ -1,11 +1,10 @@
 """DE metrics module."""
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Literal
+from typing import Literal, Optional
 
 import numpy as np
 import polars as pl
-from scipy.stats import spearmanr
 from sklearn.metrics import auc, precision_recall_curve, roc_curve
 
 from .registry import MetricType, registry
@@ -21,7 +20,7 @@ class DEOverlapMetric:
     fdr_threshold: Optional[float] = 0.05
     sort_by: DESortBy = DESortBy.ABS_FOLD_CHANGE
 
-    def __call__(self, data: DEComparison) -> Dict[str, float]:
+    def __call__(self, data: DEComparison) -> dict[str, float]:
         """Compute overlap between real and predicted DE genes."""
         return data.compute_overlap(
             k=self.k,
@@ -190,7 +189,7 @@ class DEDirectionMatch:
     def __init__(self, fdr_threshold: float = 0.05) -> None:
         self.fdr_threshold = fdr_threshold
 
-    def __call__(self, data: DEComparison) -> Dict[str, float]:
+    def __call__(self, data: DEComparison) -> dict[str, float]:
         """Compute directional agreement between real and predicted DE genes."""
         matches = {}
 
@@ -226,7 +225,7 @@ class DESpearmanLFC:
     def __init__(self, fdr_threshold: float = 0.05) -> None:
         self.fdr_threshold = fdr_threshold
 
-    def __call__(self, data: DEComparison) -> Dict[str, float]:
+    def __call__(self, data: DEComparison) -> dict[str, float]:
         """Compute correlation between log fold changes of significant genes."""
         correlations = {}
 
@@ -266,7 +265,7 @@ class DESigGenesRecall:
     def __init__(self, fdr_threshold: float = 0.05) -> None:
         self.fdr_threshold = fdr_threshold
 
-    def __call__(self, data: DEComparison) -> Dict[str, float]:
+    def __call__(self, data: DEComparison) -> dict[str, float]:
         """Compute recall of significant genes between real and predicted DE."""
 
         filt_real = data.real.filter_to_significant(fdr_threshold=self.fdr_threshold)
@@ -307,7 +306,7 @@ class DENsigCounts:
     def __init__(self, fdr_threshold: float = 0.05) -> None:
         self.fdr_threshold = fdr_threshold
 
-    def __call__(self, data: DEComparison) -> Dict[str, Dict[str, int]]:
+    def __call__(self, data: DEComparison) -> dict[str, dict[str, int]]:
         """Compute counts of significant genes in real and predicted DE."""
         counts = {}
 
