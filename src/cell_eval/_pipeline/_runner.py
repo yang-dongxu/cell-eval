@@ -44,7 +44,6 @@ class MetricPipeline:
         self,
         name: str,
         data: DEComparison | PerturbationAnndataPair,
-        celltype: str | None = None,
     ):
         """Compute a specific metric."""
         try:
@@ -59,7 +58,6 @@ class MetricPipeline:
                                 MetricResult(
                                     name=f"{name}_{sub_name}",
                                     value=value,
-                                    celltype=celltype,
                                     perturbation=pert,
                                 )
                             )
@@ -68,7 +66,6 @@ class MetricPipeline:
                             MetricResult(
                                 name=name,
                                 value=pert_value,
-                                celltype=celltype,
                                 perturbation=pert,
                             )
                         )
@@ -79,37 +76,35 @@ class MetricPipeline:
                         MetricResult(
                             name=name,
                             value=value,
-                            celltype=celltype,
                             perturbation=pert,
                         )
                     )
         except Exception as e:
             logger.error(f"Error computing metric '{name}': {e}")
 
-    def compute_de_metrics(
-        self, data: DEComparison, celltype: str | None = None
-    ) -> None:
+    def compute_de_metrics(self, data: DEComparison) -> None:
         """Compute DE metrics."""
         for name in self._metrics:
             if name not in metrics_registry.list_metrics(MetricType.DE):
                 continue
-            self._compute_metric(name, data, celltype)
+            self._compute_metric(name, data)
 
     def compute_anndata_metrics(
-        self, data: PerturbationAnndataPair, celltype: str | None = None
+        self,
+        data: PerturbationAnndataPair,
     ) -> None:
         """Compute perturbation metrics."""
         for name in self._metrics:
             if name not in metrics_registry.list_metrics(MetricType.ANNDATA_PAIR):
                 continue
-            self._compute_metric(name, data, celltype)
+            self._compute_metric(name, data)
 
     def get_results(self) -> pl.DataFrame:
         """Get results as a DataFrame."""
         if not self._results:
             return pl.DataFrame()
         return pl.DataFrame([r.to_dict() for r in self._results]).pivot(
-            index=["celltype", "perturbation"],
+            index="perturbation",
             on="metric",
             values="value",
         )

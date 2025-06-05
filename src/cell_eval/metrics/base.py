@@ -18,13 +18,11 @@ class MetricResult:
 
     name: str
     value: float | str
-    celltype: str | None = None
     perturbation: str | None = None
 
     def to_dict(self) -> dict[str, float | str]:
         """Convert result to dictionary."""
         return {
-            "celltype": self.celltype,
             "perturbation": self.perturbation,
             "metric": self.name,
             "value": self.value,
