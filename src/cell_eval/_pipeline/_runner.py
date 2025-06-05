@@ -1,4 +1,5 @@
 import logging
+from typing import Literal
 
 import numpy as np
 import polars as pl
@@ -12,10 +13,28 @@ logger = logging.getLogger(__name__)
 class MetricPipeline:
     """Pipeline for computing metrics."""
 
-    def __init__(self) -> None:
+    def __init__(
+        self, profile: Literal["full", "de", "anndata"] | None = "full"
+    ) -> None:
         """Initialize pipeline."""
         self._metrics: list[str] = []
         self._results: list[MetricResult] = []
+        match profile:
+            case "full":
+                self._metrics.extend(metrics_registry.list_metrics(MetricType.DE))
+                self._metrics.extend(
+                    metrics_registry.list_metrics(MetricType.ANNDATA_PAIR)
+                )
+            case "de":
+                self._metrics.extend(metrics_registry.list_metrics(MetricType.DE))
+            case "anndata":
+                self._metrics.extend(
+                    metrics_registry.list_metrics(MetricType.ANNDATA_PAIR)
+                )
+            case None:
+                pass
+            case _:
+                raise ValueError(f"Unrecognized profile: {profile}")
 
     def add_metrics(self, metrics: list[str]) -> None:
         """Add metrics to pipeline."""
