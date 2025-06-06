@@ -195,8 +195,12 @@ class ClusteringAgreement:
         cats = adata.obs[category_key].values
         uniq, inv = np.unique(cats, return_inverse=True)
         centroids = np.zeros((uniq.size, feats.shape[1]), dtype=feats.dtype)
-        np.add.at(centroids, inv, feats)
-        centroids /= np.bincount(inv)[:, None]
+
+        for i, cat in enumerate(uniq):
+            mask = cats == cat
+            if np.any(mask):
+                centroids[i] = feats[mask].mean(axis=0)
+
         adc = ad.AnnData(X=centroids)
         adc.obs[category_key] = uniq
         return adc[adc.obs[category_key] != control_pert]
