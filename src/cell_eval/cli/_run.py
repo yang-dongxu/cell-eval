@@ -1,6 +1,8 @@
 import argparse as ap
+import logging
+import os
 
-import yaml
+logger = logging.getLogger(__name__)
 
 
 def parse_args_run(parser: ap.ArgumentParser):
@@ -8,18 +10,32 @@ def parse_args_run(parser: ap.ArgumentParser):
     CLI for evaluation
     """
     parser.add_argument(
-        "-p",
+        "-ap",
         "--adata-pred",
         type=str,
         help="Path to the predicted adata object to evaluate",
         required=True,
     )
     parser.add_argument(
-        "-r",
+        "-ar",
         "--adata-real",
         type=str,
         help="Path to the real adata object to evaluate against",
         required=True,
+    )
+    parser.add_argument(
+        "-dp",
+        "--de-pred",
+        type=str,
+        help="Path to the predicted DE results (computed with pdex from adata-pred if not provided)",
+        required=False,
+    )
+    parser.add_argument(
+        "-dr",
+        "--de-real",
+        type=str,
+        help="Path to the real DE results (computed with pdex from adata-real if not provided)",
+        required=False,
     )
     parser.add_argument(
         "--control-pert",
@@ -36,12 +52,7 @@ def parse_args_run(parser: ap.ArgumentParser):
     parser.add_argument(
         "--celltype-col",
         type=str,
-        help="Name of the column designated celltype (optional)",
-    )
-    parser.add_argument(
-        "--output-space",
-        type=str,
-        default="gene",
+        help="Name of the column designated celltype to split results by (optional)",
     )
     parser.add_argument(
         "-o",
@@ -51,101 +62,92 @@ def parse_args_run(parser: ap.ArgumentParser):
         help="Output directory to write to",
     )
     parser.add_argument(
-        "--skip-dist-metrics",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--skip-de-metrics",
-        action="store_false",
-    )
-    parser.add_argument(
-        "--skip-class-score",
-        action="store_false",
-    )
-    parser.add_argument(
         "--num-threads",
         type=int,
+        default=1,
     )
     parser.add_argument(
         "--batch-size",
         type=int,
+        default=100,
     )
     parser.add_argument(
-        "--skip-normlog-check",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--minimal-eval",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--metric",
+        "--de-method",
         type=str,
         default="wilcoxon",
     )
     parser.add_argument(
-        "--fdr-threshold",
-        type=float,
-        default=0.05,
+        "--allow-discrete",
+        action="store_true",
+        help="Allow discrete data to be evaluated (usually expected to be norm-logged inputs)",
     )
     parser.add_argument(
-        "--config",
+        "--profile",
         type=str,
-        help="Sets all options via yaml - ignores CLI if used",
+        default="full",
+        help="Profile of metrics to compute (see docs for more details)",
     )
+
+
+def build_outdir(outdir: str):
+    if os.path.exists(outdir):
+        logger.warning(
+            f"Output directory {outdir} already exists, potential overwrite occurring"
+        )
+    os.makedirs(outdir, exist_ok=True)
 
 
 def run_evaluation(args: ap.ArgumentParser):
-    from ..metric_evaluator import MetricsEvaluator
+    import anndata as ad
 
-    print("Reading adata objects")
-    if args.config:
-        # Read in config file
-        with open(args.config, "r") as f:
-            config = yaml.safe_load(f)
+    from cell_eval import MetricsEvaluator
+    from cell_eval.utils import split_anndata_on_celltype
 
-        # Create the evaluator
-        evaluator = MetricsEvaluator(
-            path_pred=args.adata_pred,
-            path_real=args.adata_real,
-            include_dist_metrics=config["include_dist_metrics"],
-            control_pert=config["control_pert"],
-            pert_col=config["pert_col"],
-            celltype_col=config["celltype_col"],
-            output_space=config["output_space"],
-            shared_perts=config["shared_perts"],
-            outdir=config["outdir"],
-            de_metric=config["de_metric"],
-            class_score=config["class_score"],
-            n_threads=config["n_threads"] if "n_threads" in config else None,
-            batch_size=config["batch_size"] if "batch_size" in config else None,
-            metric=config["metric"] if "metric" in config else "wilcoxon",
-            skip_normlog_check=config.get("skip_normlog_check", False),
+    if args.celltype_col is not None:
+        real = ad.read_h5ad(args.adata_real)
+        pred = ad.read_h5ad(args.adata_pred)
+
+        real_split = split_anndata_on_celltype(real, args.celltype_col)
+        pred_split = split_anndata_on_celltype(pred, args.celltype_col)
+
+        assert len(real_split) == len(pred_split), (
+            f"Number of celltypes in real and pred anndata must match: {len(real_split)} != {len(pred_split)}"
         )
+
+        for ct in real_split.keys():
+            real_ct = real_split[ct]
+            pred_ct = pred_split[ct]
+
+            evaluator = MetricsEvaluator(
+                adata_pred=pred_ct,
+                adata_real=real_ct,
+                de_pred=args.de_pred,
+                de_real=args.de_real,
+                control_pert=args.control_pert,
+                pert_col=args.pert_col,
+                de_method=args.de_method,
+                num_threads=args.num_threads,
+                batch_size=args.batch_size,
+                outdir=args.outdir,
+                allow_discrete=args.allow_discrete,
+                prefix=ct,
+            )
+            results = evaluator.compute(profile=args.profile)
+            results.write_csv(os.path.join(args.outdir, f"{ct}_results.csv"))
+
     else:
         evaluator = MetricsEvaluator(
-            path_pred=args.adata_pred,
-            path_real=args.adata_real,
-            include_dist_metrics=args.skip_dist_metrics,
+            adata_pred=args.adata_pred,
+            adata_real=args.adata_real,
+            de_pred=args.de_pred,
+            de_real=args.de_real,
             control_pert=args.control_pert,
             pert_col=args.pert_col,
-            celltype_col=args.celltype_col,
-            output_space=args.output_space,
-            outdir=args.outdir,
-            de_metric=args.skip_de_metrics,
-            class_score=args.skip_class_score,
-            n_threads=args.num_threads,
+            de_method=args.de_method,
+            num_threads=args.num_threads,
             batch_size=args.batch_size,
-            skip_normlog_check=args.skip_normlog_check,
-            minimal_eval=args.minimal_eval,
-            metric=args.metric,
-            fdr_threshold=args.fdr_threshold,
+            outdir=args.outdir,
+            allow_discrete=args.allow_discrete,
         )
-
-    print("Running evaluation")
-    # Compute the metrics
-    evaluator.compute()
-
-    # Save the metrics
-    evaluator.save_metrics_per_celltype()
-    print("Done")
+        results = evaluator.compute(profile=args.profile)
+        results.write_csv(os.path.join(args.outdir, "results.csv"))

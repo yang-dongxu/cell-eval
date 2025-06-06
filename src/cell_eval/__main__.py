@@ -1,6 +1,14 @@
 import argparse as ap
+import logging
 
-from .cli import parse_args_prep, parse_args_run, run_evaluation, run_prep
+from .cli import (
+    parse_args_prep,
+    parse_args_run,
+    run_evaluation,
+    run_prep,
+)
+
+logger = logging.getLogger(__name__)
 
 
 def get_args():
