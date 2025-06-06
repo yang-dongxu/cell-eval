@@ -5,7 +5,6 @@ import pytest
 
 from cell_eval import MetricsEvaluator
 from cell_eval.data import (
-    CELLTYPE_COL,
     CONTROL_VAR,
     N_CELLTYPES,
     PERT_COL,
@@ -26,11 +25,7 @@ def test_missing_adata_input_vars():
             include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
         )
 
 
@@ -46,14 +41,9 @@ def test_broken_adata_mismatched_var_size():
         MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
         )
 
 
@@ -70,14 +60,9 @@ def test_broken_adata_mismatched_var_ordering():
         MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
         )
 
 
@@ -89,14 +74,9 @@ def test_broken_adata_not_normlog():
         evaluator = MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
         )
         evaluator.compute()
 
@@ -107,15 +87,10 @@ def test_broken_adata_not_normlog_skip_check():
     MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
-        include_dist_metrics=True,
         control_pert=CONTROL_VAR,
         pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
         outdir=OUTDIR,
-        class_score=True,
-        skip_normlog_check=True,
+        allow_discrete=True,
     )
 
 
@@ -133,11 +108,7 @@ def test_broken_adata_missing_pertcol_in_real():
             include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
         )
 
 
@@ -152,58 +123,9 @@ def test_broken_adata_missing_pertcol_in_pred():
         MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
-        )
-
-
-def test_broken_adata_missing_celltypecol_in_real():
-    adata_real = build_random_anndata()
-    adata_pred = adata_real.copy()
-
-    # Remove celltype_col from adata_real
-    adata_real.obs.drop(columns=[CELLTYPE_COL], inplace=True)
-
-    with pytest.raises(Exception):
-        MetricsEvaluator(
-            adata_pred=adata_pred,
-            adata_real=adata_real,
-            include_dist_metrics=True,
-            control_pert=CONTROL_VAR,
-            pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
-            outdir=OUTDIR,
-            class_score=True,
-        )
-
-
-def test_broken_adata_missing_celltypecol_in_pred():
-    adata_real = build_random_anndata()
-    adata_pred = adata_real.copy()
-
-    # Remove celltype_col from adata_pred
-    adata_pred.obs.drop(columns=[CELLTYPE_COL], inplace=True)
-
-    with pytest.raises(Exception):
-        MetricsEvaluator(
-            adata_pred=adata_pred,
-            adata_real=adata_real,
-            include_dist_metrics=True,
-            control_pert=CONTROL_VAR,
-            pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
-            outdir=OUTDIR,
-            class_score=True,
         )
 
 
@@ -218,14 +140,9 @@ def test_broken_adata_missing_control_in_real():
         MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
         )
 
 
@@ -240,14 +157,9 @@ def test_broken_adata_missing_control_in_pred():
         MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
         )
 
 
@@ -262,15 +174,10 @@ def test_unknown_alternative_de_metric():
         MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
-            celltype_col=CELLTYPE_COL,
-            output_space="gene",
-            shared_perts=None,
             outdir=OUTDIR,
-            class_score=True,
-            metric="unknown",
+            de_method="unknown",
         ).compute()
 
 
@@ -282,7 +189,6 @@ def test_eval_simple():
         adata_real=adata_real,
         control_pert="control",
         pert_col="perturbation",
-        celltype_col="celltype",
     )
     evaluator.compute()
 
@@ -312,14 +218,9 @@ def test_eval():
     evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
-        include_dist_metrics=True,
         control_pert=CONTROL_VAR,
         pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
         outdir=OUTDIR,
-        class_score=True,
     )
     evaluator.compute()
 
@@ -341,15 +242,9 @@ def test_minimal_eval():
     evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
-        include_dist_metrics=True,
         control_pert=CONTROL_VAR,
         pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
         outdir=OUTDIR,
-        class_score=True,
-        minimal_eval=True,
     )
     evaluator.compute()
 
@@ -371,14 +266,9 @@ def test_eval_sparse():
     evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
-        include_dist_metrics=True,
         control_pert=CONTROL_VAR,
         pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
         outdir=OUTDIR,
-        class_score=True,
     )
     evaluator.compute()
 
@@ -400,14 +290,9 @@ def test_eval_downsampled_cells():
     evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
-        include_dist_metrics=True,
         control_pert=CONTROL_VAR,
         pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
         outdir=OUTDIR,
-        class_score=True,
     )
     evaluator.compute()
 
@@ -429,45 +314,10 @@ def test_eval_alt_metric():
     evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
-        include_dist_metrics=True,
         control_pert=CONTROL_VAR,
         pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
         outdir=OUTDIR,
-        class_score=True,
-        metric="anderson",
-    )
-    evaluator.compute()
-
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
-        )
-
-
-def test_eval_alt_fdr_threshold():
-    adata_real = build_random_anndata()
-    adata_pred = downsample_cells(adata_real, fraction=0.5)
-    evaluator = MetricsEvaluator(
-        adata_pred=adata_pred,
-        adata_real=adata_real,
-        include_dist_metrics=True,
-        control_pert=CONTROL_VAR,
-        pert_col=PERT_COL,
-        celltype_col=CELLTYPE_COL,
-        output_space="gene",
-        shared_perts=None,
-        outdir=OUTDIR,
-        class_score=True,
-        fdr_threshold=0.01,
+        de_method="anderson",
     )
     evaluator.compute()
 
