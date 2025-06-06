@@ -64,11 +64,13 @@ class MetricsEvaluator:
     def compute(
         self,
         profile: Literal["full", "minimal", "de", "anndata"] = "full",
+        metric_configs: dict[str, dict[str, any]] | None = None,
         basename: str = "results.csv",
         write_csv: bool = True,
     ) -> pl.DataFrame:
         pipeline = MetricPipeline(
             profile=profile,
+            metric_configs=metric_configs,
         )
         pipeline.compute_de_metrics(self.de_comparison)
         pipeline.compute_anndata_metrics(self.anndata_pair)
