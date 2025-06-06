@@ -58,7 +58,7 @@ class MetricsEvaluator:
 
     def compute(
         self,
-        profile: Literal["full", "minimal"] = "full",
+        profile: Literal["full", "minimal", "de", "anndata"] = "full",
     ) -> pl.DataFrame:
         pipeline = MetricPipeline(
             profile=profile,

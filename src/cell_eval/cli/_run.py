@@ -72,18 +72,20 @@ def parse_args_run(parser: ap.ArgumentParser):
         default=100,
     )
     parser.add_argument(
-        "--skip-normlog-check",
-        action="store_true",
-    )
-    parser.add_argument(
         "--de-method",
         type=str,
         default="wilcoxon",
     )
     parser.add_argument(
-        "--fdr-threshold",
-        type=float,
-        default=0.05,
+        "--allow-discrete",
+        action="store_true",
+        help="Allow discrete data to be evaluated (usually expected to be norm-logged inputs)",
+    )
+    parser.add_argument(
+        "--profile",
+        type=str,
+        default="full",
+        help="Profile of metrics to compute (see docs for more details)",
     )
 
 
@@ -109,6 +111,7 @@ def run_evaluation(args: ap.ArgumentParser):
         num_threads=args.num_threads,
         batch_size=args.batch_size,
         outdir=args.outdir,
+        allow_discrete=args.allow_discrete,
     )
-    results = evaluator.compute(profile="full")
+    results = evaluator.compute(profile=args.profile)
     results.write_csv(os.path.join(args.outdir, "results.csv"))

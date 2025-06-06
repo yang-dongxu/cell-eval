@@ -9,13 +9,22 @@ from ..metrics import MetricResult, metrics_registry
 
 logger = logging.getLogger(__name__)
 
+MINIMAL_METRICS = [
+    "pearson_delta",
+    "mse",
+    "mae",
+    "discrimination_score",
+    "top_N_overlap",
+    "de_nsig_counts",
+]
+
 
 class MetricPipeline:
     """Pipeline for computing metrics."""
 
     def __init__(
         self,
-        profile: Literal["full", "de", "anndata"] | None = "full",
+        profile: Literal["full", "minimal", "de", "anndata"] | None = "full",
         metric_configs: dict[str, dict[str, any]] | None = None,
     ) -> None:
         """Initialize pipeline.
@@ -40,6 +49,8 @@ class MetricPipeline:
                 self._metrics.extend(
                     metrics_registry.list_metrics(MetricType.ANNDATA_PAIR)
                 )
+            case "minimal":
+                self._metrics.extend(MINIMAL_METRICS)
             case None:
                 pass
             case _:
@@ -121,6 +132,8 @@ class MetricPipeline:
             if isinstance(value, dict):
                 # Add each perturbation result separately
                 for pert, pert_value in value.items():
+                    # if the return value is a dictionary add the sub-metric
+                    # as a separate result
                     if isinstance(pert_value, dict):
                         for sub_name, value in pert_value.items():
                             self._results.append(
