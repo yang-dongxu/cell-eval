@@ -62,6 +62,44 @@ def mae_delta(
     )
 
 
+def edistance(
+    data: PerturbationAnndataPair,
+    embed_key: str | None = None,
+    metric: str = "euclidean",
+    **kwargs,
+) -> float:
+    """Compute Euclidean distance of each perturbation-control delta."""
+
+    def _edistance(
+        x: np.ndarray,
+        y: np.ndarray,
+        metric: str = "euclidean",
+        **kwargs,
+    ) -> float:
+        sigma_x = skm.pairwise_distances(x, metric=metric, **kwargs).mean()
+        sigma_y = skm.pairwise_distances(y, metric=metric, **kwargs).mean()
+        delta = skm.pairwise_distances(x, y, metric=metric, **kwargs).mean()
+        return 2 * delta - sigma_x - sigma_y
+
+    d_real = np.zeros(data.perts.size)
+    d_pred = np.zeros(data.perts.size)
+
+    for idx, delta in enumerate(data.iter_delta_arrays(embed_key=embed_key)):
+        d_real[idx] = _edistance(
+            delta.pert_real, delta.ctrl_real, metric=metric, **kwargs
+        )
+        if delta.ctrl_pred is None:
+            d_pred[idx] = _edistance(
+                delta.pert_pred, delta.ctrl_real, metric=metric, **kwargs
+            )
+        else:
+            d_pred[idx] = _edistance(
+                delta.pert_pred, delta.ctrl_pred, metric=metric, **kwargs
+            )
+
+    return pearsonr(d_real, d_pred).correlation
+
+
 def discrimination_score(
     data: PerturbationAnndataPair, embed_key: str | None = None
 ) -> dict[str, float]:

@@ -2,6 +2,7 @@ from .._types import MetricType
 from ._anndata import (
     ClusteringAgreement,
     discrimination_score,
+    edistance,
     mae,
     mae_delta,
     mse,
@@ -68,6 +69,14 @@ metrics_registry.register(
     description="Determines similarity of each pred representation to real via normalized rank of cosine similarity",
     func=discrimination_score,
 )
+
+metrics_registry.register(
+    name="pearson_edistance",
+    metric_type=MetricType.ANNDATA_PAIR,
+    description="Calculates the pearson correlation coefficient between all pred and real edistance from controls",
+    func=edistance,
+)
+
 metrics_registry.register(
     name="top_N_overlap",
     metric_type=MetricType.DE,
