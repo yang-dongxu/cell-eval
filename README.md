@@ -39,8 +39,8 @@ cell-eval prep -i <your/path/to/real>.h5ad
 
 # run evaluation
 cell-eval run \
-    -p <your/path/to/pred>.h5ad \
-    -r <your/path/to/real>.h5ad
+    -ap <your/path/to/pred>.h5ad \
+    -ar <your/path/to/real>.h5ad
 ```
 
 ### Module Usage
@@ -58,7 +58,6 @@ evaluator = MetricsEvaluator(
     adata_real=adata_real,
     control_pert="control",
     pert_col="perturbation",
-    celltype_col="celltype",
 )
 evaluator.compute()
 ```
