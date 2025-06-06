@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Iterator, Literal, Optional
+from typing import Iterator, Literal
 
 import anndata as ad
 import numpy as np
@@ -87,7 +87,7 @@ class DeltaArrays:
     pert_real: np.ndarray
     pert_pred: np.ndarray
     ctrl_real: np.ndarray
-    ctrl_pred: Optional[np.ndarray] = None
+    ctrl_pred: np.ndarray | None = None
     embed_key: str | None = None
 
     def __post_init__(self) -> None:
@@ -110,7 +110,10 @@ class DeltaArrays:
             case "real":
                 effect = self.pert_real.mean(axis=0) - self.ctrl_real.mean(axis=0)
             case "pred":
-                effect = self.pert_pred.mean(axis=0) - self.ctrl_pred.mean(axis=0)
+                if self.ctrl_pred is None:
+                    effect = self.pert_pred.mean(axis=0) - self.ctrl_real.mean(axis=0)
+                else:
+                    effect = self.pert_pred.mean(axis=0) - self.ctrl_pred.mean(axis=0)
             case _:
                 raise ValueError(f"Invalid which: {which}")
         if abs:
