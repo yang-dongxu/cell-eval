@@ -32,6 +32,7 @@ class MetricsEvaluator:
         batch_size: int = 100,
         outdir: str = "./cell-eval-outdir",
         allow_discrete: bool = False,
+        prefix: str | None = None,
     ):
         if os.path.exists(outdir):
             logger.warning(
@@ -54,6 +55,7 @@ class MetricsEvaluator:
             num_threads=num_threads if num_threads != -1 else mp.cpu_count(),
             batch_size=batch_size,
             outdir=outdir,
+            prefix=prefix,
         )
 
     def compute(
@@ -123,6 +125,7 @@ def _build_de_comparison(
     num_threads: int = 1,
     batch_size: int = 100,
     outdir: str | None = None,
+    prefix: str | None = None,
 ):
     return initialize_de_comparison(
         real=_load_or_build_de(
@@ -133,6 +136,7 @@ def _build_de_comparison(
             num_threads=num_threads,
             batch_size=batch_size,
             outdir=outdir,
+            prefix=prefix,
         ),
         pred=_load_or_build_de(
             mode="pred",
@@ -142,6 +146,7 @@ def _build_de_comparison(
             num_threads=num_threads,
             batch_size=batch_size,
             outdir=outdir,
+            prefix=prefix,
         ),
     )
 
@@ -154,6 +159,7 @@ def _load_or_build_de(
     num_threads: int = 1,
     batch_size: int = 100,
     outdir: str | None = None,
+    prefix: str | None = None,
 ):
     if de_path is None:
         if anndata_pair is None:
@@ -169,7 +175,7 @@ def _load_or_build_de(
             as_polars=True,
         )
         if outdir is not None:
-            frame.write_csv(os.path.join(outdir, f"{mode}_de.csv"))
+            frame.write_csv(os.path.join(outdir, f"{prefix}_{mode}_de.csv"))
         return frame
     elif isinstance(de_path, str):
         logger.info(f"Reading {mode} DE results from {de_path}")

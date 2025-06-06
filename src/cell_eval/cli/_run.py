@@ -52,7 +52,7 @@ def parse_args_run(parser: ap.ArgumentParser):
     parser.add_argument(
         "--celltype-col",
         type=str,
-        help="Name of the column designated celltype (optional)",
+        help="Name of the column designated celltype to split results by (optional)",
     )
     parser.add_argument(
         "-o",
@@ -98,20 +98,56 @@ def build_outdir(outdir: str):
 
 
 def run_evaluation(args: ap.ArgumentParser):
-    from cell_eval import MetricsEvaluator
+    import anndata as ad
 
-    evaluator = MetricsEvaluator(
-        adata_pred=args.adata_pred,
-        adata_real=args.adata_real,
-        de_pred=args.de_pred,
-        de_real=args.de_real,
-        control_pert=args.control_pert,
-        pert_col=args.pert_col,
-        de_method=args.de_method,
-        num_threads=args.num_threads,
-        batch_size=args.batch_size,
-        outdir=args.outdir,
-        allow_discrete=args.allow_discrete,
-    )
-    results = evaluator.compute(profile=args.profile)
-    results.write_csv(os.path.join(args.outdir, "results.csv"))
+    from cell_eval import MetricsEvaluator
+    from cell_eval.utils import split_anndata_on_celltype
+
+    if args.celltype_col is not None:
+        real = ad.read_h5ad(args.adata_real)
+        pred = ad.read_h5ad(args.adata_pred)
+
+        real_split = split_anndata_on_celltype(real, args.celltype_col)
+        pred_split = split_anndata_on_celltype(pred, args.celltype_col)
+
+        assert len(real_split) == len(pred_split), (
+            f"Number of celltypes in real and pred anndata must match: {len(real_split)} != {len(pred_split)}"
+        )
+
+        for ct in real_split.keys():
+            real_ct = real_split[ct]
+            pred_ct = pred_split[ct]
+
+            evaluator = MetricsEvaluator(
+                adata_pred=pred_ct,
+                adata_real=real_ct,
+                de_pred=args.de_pred,
+                de_real=args.de_real,
+                control_pert=args.control_pert,
+                pert_col=args.pert_col,
+                de_method=args.de_method,
+                num_threads=args.num_threads,
+                batch_size=args.batch_size,
+                outdir=args.outdir,
+                allow_discrete=args.allow_discrete,
+                prefix=ct,
+            )
+            results = evaluator.compute(profile=args.profile)
+            results.write_csv(os.path.join(args.outdir, f"{ct}_results.csv"))
+
+    else:
+        evaluator = MetricsEvaluator(
+            adata_pred=args.adata_pred,
+            adata_real=args.adata_real,
+            de_pred=args.de_pred,
+            de_real=args.de_real,
+            control_pert=args.control_pert,
+            pert_col=args.pert_col,
+            de_method=args.de_method,
+            num_threads=args.num_threads,
+            batch_size=args.batch_size,
+            outdir=args.outdir,
+            allow_discrete=args.allow_discrete,
+        )
+        results = evaluator.compute(profile=args.profile)
+        results.write_csv(os.path.join(args.outdir, "results.csv"))
