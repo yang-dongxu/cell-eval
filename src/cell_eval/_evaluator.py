@@ -58,16 +58,30 @@ class MetricsEvaluator:
             prefix=prefix,
         )
 
+        self.outdir = outdir
+        self.prefix = prefix
+
     def compute(
         self,
         profile: Literal["full", "minimal", "de", "anndata"] = "full",
+        basename: str = "results.csv",
+        write_csv: bool = True,
     ) -> pl.DataFrame:
         pipeline = MetricPipeline(
             profile=profile,
         )
         pipeline.compute_de_metrics(self.de_comparison)
         pipeline.compute_anndata_metrics(self.anndata_pair)
-        return pipeline.get_results()
+        results = pipeline.get_results()
+
+        if write_csv:
+            results.write_csv(
+                os.path.join(
+                    self.outdir,
+                    f"{self.prefix}_{basename}" if self.prefix else basename,
+                )
+            )
+        return results
 
 
 def _build_anndata_pair(
@@ -175,7 +189,8 @@ def _load_or_build_de(
             as_polars=True,
         )
         if outdir is not None:
-            frame.write_csv(os.path.join(outdir, f"{prefix}_{mode}_de.csv"))
+            pathname = f"{mode}_de.csv" if not prefix else f"{prefix}_{mode}_de.csv"
+            frame.write_csv(os.path.join(outdir, pathname))
         return frame
     elif isinstance(de_path, str):
         logger.info(f"Reading {mode} DE results from {de_path}")

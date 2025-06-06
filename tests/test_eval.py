@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import numpy as np
 import pytest
@@ -6,7 +7,6 @@ import pytest
 from cell_eval import MetricsEvaluator
 from cell_eval.data import (
     CONTROL_VAR,
-    N_CELLTYPES,
     PERT_COL,
     build_random_anndata,
     downsample_cells,
@@ -212,6 +212,25 @@ def test_eval_missing_celltype_col():
     evaluator.compute()
 
 
+def validate_expected_files(
+    outdir: str, prefix: str | None = None, remove: bool = True
+):
+    base_real_de = "real_de.csv" if not prefix else f"{prefix}_real_de.csv"
+    base_pred_de = "pred_de.csv" if not prefix else f"{prefix}_pred_de.csv"
+    base_results = "results.csv" if not prefix else f"{prefix}_results.csv"
+    assert os.path.exists(f"{outdir}/{base_real_de}"), (
+        "Expected file for real DE results missing"
+    )
+    assert os.path.exists(f"{outdir}/{base_pred_de}"), (
+        "Expected file for predicted DE results missing"
+    )
+    assert os.path.exists(f"{outdir}/{base_results}"), (
+        "Expected file for results missing"
+    )
+    if remove:
+        shutil.rmtree(outdir)
+
+
 def test_eval():
     adata_real = build_random_anndata()
     adata_pred = adata_real.copy()
@@ -223,17 +242,22 @@ def test_eval():
         outdir=OUTDIR,
     )
     evaluator.compute()
+    validate_expected_files(OUTDIR)
 
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
-        )
+
+def test_eval_prefix():
+    adata_real = build_random_anndata()
+    adata_pred = adata_real.copy()
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        outdir=OUTDIR,
+        prefix="arbitrary",
+    )
+    evaluator.compute()
+    validate_expected_files(OUTDIR, prefix="arbitrary")
 
 
 def test_minimal_eval():
@@ -246,18 +270,8 @@ def test_minimal_eval():
         pert_col=PERT_COL,
         outdir=OUTDIR,
     )
-    evaluator.compute()
-
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
-        )
+    evaluator.compute(profile="minimal")
+    validate_expected_files(OUTDIR)
 
 
 def test_eval_sparse():
@@ -271,17 +285,7 @@ def test_eval_sparse():
         outdir=OUTDIR,
     )
     evaluator.compute()
-
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
-        )
+    validate_expected_files(OUTDIR)
 
 
 def test_eval_downsampled_cells():
@@ -295,17 +299,7 @@ def test_eval_downsampled_cells():
         outdir=OUTDIR,
     )
     evaluator.compute()
-
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
-        )
+    validate_expected_files(OUTDIR)
 
 
 def test_eval_alt_metric():
@@ -320,14 +314,4 @@ def test_eval_alt_metric():
         de_method="anderson",
     )
     evaluator.compute()
-
-    for x in np.arange(N_CELLTYPES):
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_downstream_de_results.csv"), (
-            f"Expected file for downstream DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_pred_de_results_control.csv"), (
-            f"Expected file for predicted DE results missing for celltype: {x}"
-        )
-        assert os.path.exists(f"{OUTDIR}/celltype_{x}_real_de_results_control.csv"), (
-            f"Expected file for real DE results missing for celltype: {x}"
-        )
+    validate_expected_files(OUTDIR)
