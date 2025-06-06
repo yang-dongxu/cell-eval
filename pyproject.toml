@@ -37,3 +37,4 @@ cell-eval = "cell_eval.__main__:main"
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
+reportOptionalSubscript = false
