@@ -34,6 +34,7 @@ class MetricsEvaluator:
         outdir: str = "./cell-eval-outdir",
         allow_discrete: bool = False,
         prefix: str | None = None,
+        pdex_kwargs: dict[str, Any] = {},
     ):
         if os.path.exists(outdir):
             logger.warning(
@@ -57,6 +58,7 @@ class MetricsEvaluator:
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
+            pdex_kwargs=pdex_kwargs,
         )
 
         self.outdir = outdir
@@ -143,6 +145,7 @@ def _build_de_comparison(
     batch_size: int = 100,
     outdir: str | None = None,
     prefix: str | None = None,
+    pdex_kwargs: dict[str, Any] = {},
 ):
     return initialize_de_comparison(
         real=_load_or_build_de(
@@ -154,6 +157,7 @@ def _build_de_comparison(
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
+            pdex_kwargs=pdex_kwargs,
         ),
         pred=_load_or_build_de(
             mode="pred",
@@ -164,6 +168,7 @@ def _build_de_comparison(
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
+            pdex_kwargs=pdex_kwargs,
         ),
     )
 
@@ -177,6 +182,7 @@ def _load_or_build_de(
     batch_size: int = 100,
     outdir: str | None = None,
     prefix: str | None = None,
+    pdex_kwargs: dict[str, Any] = {},
 ) -> pl.DataFrame:
     if de_path is None:
         if anndata_pair is None:
@@ -190,6 +196,7 @@ def _load_or_build_de(
             num_workers=num_threads,
             batch_size=batch_size,
             as_polars=True,
+            **pdex_kwargs,
         )
         if outdir is not None:
             pathname = f"{mode}_de.csv" if not prefix else f"{prefix}_{mode}_de.csv"
@@ -198,6 +205,8 @@ def _load_or_build_de(
         return frame  # type: ignore
     elif isinstance(de_path, str):
         logger.info(f"Reading {mode} DE results from {de_path}")
+        if len(pdex_kwargs) > 0:
+            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
         return pl.read_csv(
             de_path,
             schema_overrides={
@@ -206,8 +215,12 @@ def _load_or_build_de(
             },
         )
     elif isinstance(de_path, pl.DataFrame):
+        if len(pdex_kwargs) > 0:
+            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
         return de_path
     elif isinstance(de_path, pd.DataFrame):
+        if len(pdex_kwargs) > 0:
+            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
         return pl.from_pandas(de_path)
     else:
         raise TypeError(f"Unexpected type for de_path: {type(de_path)}")
