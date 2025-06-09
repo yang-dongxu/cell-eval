@@ -92,7 +92,7 @@ def strip_anndata(
     return minimal
 
 
-def run_prep(args: ap.ArgumentParser):
+def run_prep(args: ap.Namespace):
     adata = ad.read(args.input)
     minimal = strip_anndata(
         adata,

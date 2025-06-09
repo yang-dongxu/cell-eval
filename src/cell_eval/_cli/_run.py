@@ -97,7 +97,7 @@ def build_outdir(outdir: str):
     os.makedirs(outdir, exist_ok=True)
 
 
-def run_evaluation(args: ap.ArgumentParser):
+def run_evaluation(args: ap.Namespace):
     import anndata as ad
 
     from cell_eval import MetricsEvaluator
