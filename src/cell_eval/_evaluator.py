@@ -1,10 +1,11 @@
 import logging
 import multiprocessing as mp
 import os
-from typing import Literal
+from typing import Any, Literal
 
 import anndata as ad
 import numpy as np
+import pandas as pd
 import polars as pl
 from pdex import parallel_differential_expression
 
@@ -64,7 +65,7 @@ class MetricsEvaluator:
     def compute(
         self,
         profile: Literal["full", "minimal", "de", "anndata"] = "full",
-        metric_configs: dict[str, dict[str, any]] | None = None,
+        metric_configs: dict[str, dict[str, Any]] | None = None,
         basename: str = "results.csv",
         write_csv: bool = True,
     ) -> pl.DataFrame:
@@ -176,7 +177,7 @@ def _load_or_build_de(
     batch_size: int = 100,
     outdir: str | None = None,
     prefix: str | None = None,
-):
+) -> pl.DataFrame:
     if de_path is None:
         if anndata_pair is None:
             raise ValueError("anndata_pair must be provided if de_path is not provided")
@@ -193,7 +194,8 @@ def _load_or_build_de(
         if outdir is not None:
             pathname = f"{mode}_de.csv" if not prefix else f"{prefix}_{mode}_de.csv"
             frame.write_csv(os.path.join(outdir, pathname))
-        return frame
+
+        return frame  # type: ignore
     elif isinstance(de_path, str):
         logger.info(f"Reading {mode} DE results from {de_path}")
         return pl.read_csv(
@@ -205,3 +207,7 @@ def _load_or_build_de(
         )
     elif isinstance(de_path, pl.DataFrame):
         return de_path
+    elif isinstance(de_path, pd.DataFrame):
+        return pl.from_pandas(de_path)
+    else:
+        raise TypeError(f"Unexpected type for de_path: {type(de_path)}")
