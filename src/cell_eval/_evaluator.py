@@ -18,6 +18,39 @@ logger = logging.getLogger(__name__)
 class MetricsEvaluator:
     """
     Evaluates benchmarking metrics of a predicted and real anndata object.
+
+    Arguments
+    =========
+
+    adata_pred: ad.AnnData | str
+        Predicted anndata object or path to anndata object.
+    adata_real: ad.AnnData | str
+        Real anndata object or path to anndata object.
+    de_pred: pl.DataFrame | str | None = None
+        Predicted differential expression results or path to differential expression results.
+        If `None`, differential expression will be computed using parallel_differential_expression
+    de_real: pl.DataFrame | str | None = None
+        Real differential expression results or path to differential expression results.
+        If `None`, differential expression will be computed using parallel_differential_expression
+    control_pert: str = "non-targeting"
+        Control perturbation name.
+    pert_col: str = "target"
+        Perturbation column name.
+    de_method: str = "wilcoxon"
+        Differential expression method.
+    num_workers: int = -1
+        Number of workers for parallel differential expression.
+    batch_size: int = 100
+        Batch size for parallel differential expression.
+    outdir: str = "./cell-eval-outdir"
+        Output directory.
+    allow_discrete: bool = False
+        Allow discrete data.
+    prefix: str | None = None
+        Prefix for output files.
+    pdex_kwargs: dict[str, Any] = {}
+        Keyword arguments for parallel_differential_expression.
+        These will overwrite arguments passed to MetricsEvaluator.__init__ if they conflict.
     """
 
     def __init__(
