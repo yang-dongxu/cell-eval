@@ -14,6 +14,7 @@ class PerturbationAnndataPair:
     pert_col: str
     control_pert: str
     perts: np.ndarray[str] = field(init=False)
+    genes: np.ndarray[str] = field(init=False)
 
     def __post_init__(self) -> None:
         if self.real.shape[1] != self.pred.shape[1]:
@@ -21,6 +22,14 @@ class PerturbationAnndataPair:
                 f"Shape mismatch: real {self.real.shape[1]} != pred {self.pred.shape[1]}"
                 " Expected to be the same number of genes"
             )
+
+        var_names_real = np.array(self.real.var.index.values)
+        var_names_pred = np.array(self.pred.var.index.values)
+        if not np.array_equal(var_names_real, var_names_pred):
+            raise ValueError(
+                f"Gene names order mismatch: real {var_names_real} != pred {var_names_pred}"
+            )
+        object.__setattr__(self, "genes", var_names_real)
 
         perts_real = np.unique(self.real.obs[self.pert_col])
         perts_pred = np.unique(self.pred.obs[self.pert_col])

@@ -116,12 +116,12 @@ def discrimination_score(
             for d in data.iter_delta_arrays(embed_key=embed_key)
         ]
     )
-    gene_names = data.real.var_names
+
     norm_ranks = {}
     for p_idx, p in enumerate(data.perts):
         # If no embed key, use gene names to exclude target gene
         if not embed_key:
-            include_mask = np.flatnonzero(gene_names != p)
+            include_mask = np.flatnonzero(data.genes != p)
         else:
             include_mask = np.ones(real_effects.shape[1], dtype=bool)
 
