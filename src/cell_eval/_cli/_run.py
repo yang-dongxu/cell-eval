@@ -1,4 +1,5 @@
 import argparse as ap
+import importlib.metadata
 import logging
 import os
 
@@ -86,6 +87,13 @@ def parse_args_run(parser: ap.ArgumentParser):
         type=str,
         default="full",
         help="Profile of metrics to compute (see docs for more details)",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {version}".format(
+            version=importlib.metadata.version("cell_eval")
+        ),
     )
 
 

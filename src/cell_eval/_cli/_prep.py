@@ -1,4 +1,5 @@
 import argparse as ap
+import importlib.metadata
 
 import anndata as ad
 import numpy as np
@@ -41,6 +42,13 @@ def parse_args_prep(parser: ap.ArgumentParser):
         type=int,
         help=f"Bit size to encode ({VALID_ENCODINGS})",
         default=32,
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {version}".format(
+            version=importlib.metadata.version("cell_eval")
+        ),
     )
 
 
@@ -93,6 +101,10 @@ def strip_anndata(
 
 
 def run_prep(args: ap.Namespace):
+    if args.version:
+        print(__version__)
+        return
+
     adata = ad.read(args.input)
     minimal = strip_anndata(
         adata,
