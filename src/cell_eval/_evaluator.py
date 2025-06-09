@@ -18,6 +18,39 @@ logger = logging.getLogger(__name__)
 class MetricsEvaluator:
     """
     Evaluates benchmarking metrics of a predicted and real anndata object.
+
+    Arguments
+    =========
+
+    adata_pred: ad.AnnData | str
+        Predicted anndata object or path to anndata object.
+    adata_real: ad.AnnData | str
+        Real anndata object or path to anndata object.
+    de_pred: pl.DataFrame | str | None = None
+        Predicted differential expression results or path to differential expression results.
+        If `None`, differential expression will be computed using parallel_differential_expression
+    de_real: pl.DataFrame | str | None = None
+        Real differential expression results or path to differential expression results.
+        If `None`, differential expression will be computed using parallel_differential_expression
+    control_pert: str = "non-targeting"
+        Control perturbation name.
+    pert_col: str = "target"
+        Perturbation column name.
+    de_method: str = "wilcoxon"
+        Differential expression method.
+    num_workers: int = -1
+        Number of workers for parallel differential expression.
+    batch_size: int = 100
+        Batch size for parallel differential expression.
+    outdir: str = "./cell-eval-outdir"
+        Output directory.
+    allow_discrete: bool = False
+        Allow discrete data.
+    prefix: str | None = None
+        Prefix for output files.
+    pdex_kwargs: dict[str, Any] = {}
+        Keyword arguments for parallel_differential_expression.
+        These will overwrite arguments passed to MetricsEvaluator.__init__ if they conflict.
     """
 
     def __init__(
@@ -34,6 +67,7 @@ class MetricsEvaluator:
         outdir: str = "./cell-eval-outdir",
         allow_discrete: bool = False,
         prefix: str | None = None,
+        pdex_kwargs: dict[str, Any] = {},
     ):
         if os.path.exists(outdir):
             logger.warning(
@@ -57,6 +91,7 @@ class MetricsEvaluator:
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
+            pdex_kwargs=pdex_kwargs,
         )
 
         self.outdir = outdir
@@ -143,6 +178,7 @@ def _build_de_comparison(
     batch_size: int = 100,
     outdir: str | None = None,
     prefix: str | None = None,
+    pdex_kwargs: dict[str, Any] = {},
 ):
     return initialize_de_comparison(
         real=_load_or_build_de(
@@ -154,6 +190,7 @@ def _build_de_comparison(
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
+            pdex_kwargs=pdex_kwargs,
         ),
         pred=_load_or_build_de(
             mode="pred",
@@ -164,8 +201,32 @@ def _build_de_comparison(
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
+            pdex_kwargs=pdex_kwargs,
         ),
     )
+
+
+def _build_pdex_kwargs(
+    reference: str,
+    groupby_key: str,
+    num_workers: int,
+    batch_size: int,
+    metric: str,
+    pdex_kwargs: dict[str, Any] = {},
+) -> dict[str, Any]:
+    if "reference" not in pdex_kwargs:
+        pdex_kwargs["reference"] = reference
+    if "groupby_key" not in pdex_kwargs:
+        pdex_kwargs["groupby_key"] = groupby_key
+    if "num_workers" not in pdex_kwargs:
+        pdex_kwargs["num_workers"] = num_workers
+    if "batch_size" not in pdex_kwargs:
+        pdex_kwargs["batch_size"] = batch_size
+    if "metric" not in pdex_kwargs:
+        pdex_kwargs["metric"] = metric
+    if "as_polars" in pdex_kwargs or "as_polars" not in pdex_kwargs:
+        pdex_kwargs["as_polars"] = True  # overwrite
+    return pdex_kwargs
 
 
 def _load_or_build_de(
@@ -177,19 +238,23 @@ def _load_or_build_de(
     batch_size: int = 100,
     outdir: str | None = None,
     prefix: str | None = None,
+    pdex_kwargs: dict[str, Any] = {},
 ) -> pl.DataFrame:
     if de_path is None:
         if anndata_pair is None:
             raise ValueError("anndata_pair must be provided if de_path is not provided")
         logger.info(f"Computing DE for {mode} data")
-        frame = parallel_differential_expression(
-            adata=anndata_pair.real if mode == "real" else anndata_pair.pred,
+        pdex_kwargs = _build_pdex_kwargs(
             reference=anndata_pair.control_pert,
             groupby_key=anndata_pair.pert_col,
-            metric=de_method,
             num_workers=num_threads,
+            metric=de_method,
             batch_size=batch_size,
-            as_polars=True,
+            pdex_kwargs=pdex_kwargs,
+        )
+        frame = parallel_differential_expression(
+            adata=anndata_pair.real if mode == "real" else anndata_pair.pred,
+            **pdex_kwargs,
         )
         if outdir is not None:
             pathname = f"{mode}_de.csv" if not prefix else f"{prefix}_{mode}_de.csv"
@@ -198,6 +263,8 @@ def _load_or_build_de(
         return frame  # type: ignore
     elif isinstance(de_path, str):
         logger.info(f"Reading {mode} DE results from {de_path}")
+        if len(pdex_kwargs) > 0:
+            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
         return pl.read_csv(
             de_path,
             schema_overrides={
@@ -206,8 +273,12 @@ def _load_or_build_de(
             },
         )
     elif isinstance(de_path, pl.DataFrame):
+        if len(pdex_kwargs) > 0:
+            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
         return de_path
     elif isinstance(de_path, pd.DataFrame):
+        if len(pdex_kwargs) > 0:
+            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
         return pl.from_pandas(de_path)
     else:
         raise TypeError(f"Unexpected type for de_path: {type(de_path)}")
