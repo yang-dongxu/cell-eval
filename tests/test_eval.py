@@ -227,6 +227,22 @@ def test_eval_pdex_kwargs():
     evaluator.compute()
 
 
+def test_eval_pdex_kwargs_duplicated():
+    adata_real = build_random_anndata()
+    adata_pred = downsample_cells(adata_real, fraction=0.5)
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        control_pert="control",
+        pert_col="perturbation",
+        pdex_kwargs={
+            "exp_post_agg": True,
+            "num_workers": 4,
+        },
+    )
+    evaluator.compute()
+
+
 def validate_expected_files(
     outdir: str, prefix: str | None = None, remove: bool = True
 ):
