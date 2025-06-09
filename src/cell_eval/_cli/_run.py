@@ -1,4 +1,5 @@
 import argparse as ap
+import importlib.metadata
 import logging
 import os
 
@@ -87,6 +88,13 @@ def parse_args_run(parser: ap.ArgumentParser):
         default="full",
         help="Profile of metrics to compute (see docs for more details)",
     )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {version}".format(
+            version=importlib.metadata.version("cell_eval")
+        ),
+    )
 
 
 def build_outdir(outdir: str):
@@ -97,7 +105,7 @@ def build_outdir(outdir: str):
     os.makedirs(outdir, exist_ok=True)
 
 
-def run_evaluation(args: ap.ArgumentParser):
+def run_evaluation(args: ap.Namespace):
     import anndata as ad
 
     from cell_eval import MetricsEvaluator

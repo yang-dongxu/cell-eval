@@ -42,7 +42,6 @@ __all__ = [
     "DEDirectionMatch",
     "DEOverlapMetric",
     "DESpearmanSignificant",
-    "SignificantGeneOverlap",
     "Top50Overlap",
     "Top100Overlap",
     "Top200Overlap",
