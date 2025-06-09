@@ -101,10 +101,6 @@ def strip_anndata(
 
 
 def run_prep(args: ap.Namespace):
-    if args.version:
-        print(__version__)
-        return
-
     adata = ad.read(args.input)
     minimal = strip_anndata(
         adata,
