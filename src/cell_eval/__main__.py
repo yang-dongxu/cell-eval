@@ -1,7 +1,7 @@
 import argparse as ap
 import logging
 
-from .cli import (
+from ._cli import (
     parse_args_prep,
     parse_args_run,
     run_evaluation,
