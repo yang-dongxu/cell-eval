@@ -173,6 +173,29 @@ def _build_de_comparison(
     )
 
 
+def _build_pdex_kwargs(
+    reference: str,
+    groupby_key: str,
+    num_workers: int,
+    batch_size: int,
+    metric: str,
+    pdex_kwargs: dict[str, Any] = {},
+) -> dict[str, Any]:
+    if "reference" not in pdex_kwargs:
+        pdex_kwargs["reference"] = reference
+    if "groupby_key" not in pdex_kwargs:
+        pdex_kwargs["groupby_key"] = groupby_key
+    if "num_workers" not in pdex_kwargs:
+        pdex_kwargs["num_workers"] = num_workers
+    if "batch_size" not in pdex_kwargs:
+        pdex_kwargs["batch_size"] = batch_size
+    if "metric" not in pdex_kwargs:
+        pdex_kwargs["metric"] = metric
+    if "as_polars" in pdex_kwargs or "as_polars" not in pdex_kwargs:
+        pdex_kwargs["as_polars"] = True  # overwrite
+    return pdex_kwargs
+
+
 def _load_or_build_de(
     mode: Literal["pred", "real"],
     de_path: pl.DataFrame | str | None = None,
@@ -188,14 +211,16 @@ def _load_or_build_de(
         if anndata_pair is None:
             raise ValueError("anndata_pair must be provided if de_path is not provided")
         logger.info(f"Computing DE for {mode} data")
-        frame = parallel_differential_expression(
-            adata=anndata_pair.real if mode == "real" else anndata_pair.pred,
+        pdex_kwargs = _build_pdex_kwargs(
             reference=anndata_pair.control_pert,
             groupby_key=anndata_pair.pert_col,
-            metric=de_method,
             num_workers=num_threads,
+            metric=de_method,
             batch_size=batch_size,
-            as_polars=True,
+            pdex_kwargs=pdex_kwargs,
+        )
+        frame = parallel_differential_expression(
+            adata=anndata_pair.real if mode == "real" else anndata_pair.pred,
             **pdex_kwargs,
         )
         if outdir is not None:
