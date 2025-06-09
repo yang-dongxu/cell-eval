@@ -126,12 +126,12 @@ def discrimination_score(
             include_mask = np.ones(real_effects.shape[1], dtype=bool)
 
         sim = cosine_similarity(
-            real_effects[p_idx, include_mask].reshape(
-                1, -1
-            ),  # select real effect for current perturbation
-            pred_effects[
+            real_effects[
                 :, include_mask
-            ],  # compare to all predicted effects across perturbations
+            ],  # compare to all real effects across perturbations
+            pred_effects[p_idx, include_mask].reshape(
+                1, -1
+            ),  # select pred effect for current perturbation
         ).flatten()
         sorted_rev = np.argsort(sim)[::-1]
         p_index = np.flatnonzero(data.perts == p)[0]
