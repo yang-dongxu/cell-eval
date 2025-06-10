@@ -116,6 +116,10 @@ def discrimination_score(
     Returns:
         Dictionary mapping perturbation names to normalized ranks
     """
+    if metric == "l1" or metric == "manhattan" or metric == "cityblock":
+        # Ignore the embedding key for L1
+        embed_key = None
+
     # Compute perturbation effects for all perturbations
     real_effects = np.vstack(
         [
@@ -133,7 +137,7 @@ def discrimination_score(
     norm_ranks = {}
     for p_idx, p in enumerate(data.perts):
         # Determine which features to include in the comparison
-        if exclude_target_gene or not embed_key:
+        if exclude_target_gene and not embed_key:
             # For expression data, exclude the target gene
             include_mask = np.flatnonzero(data.genes != p)
         else:
