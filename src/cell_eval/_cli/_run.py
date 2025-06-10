@@ -95,7 +95,7 @@ def parse_args_run(parser: ap.ArgumentParser):
         help="Profile of metrics to compute (see docs for more details)",
     )
     parser.add_argument(
-        "--to-skip",
+        "--skip-metrics",
         type=str,
         help="Metrics to skip (comma-separated for multiple) (see docs for more details)",
     )
@@ -132,7 +132,7 @@ def run_evaluation(args: ap.Namespace):
         else {}
     )
 
-    to_skip = args.to_skip.split(",") if args.to_skip else None
+    skip_metrics = args.skip_metrics.split(",") if args.skip_metrics else None
 
     if args.celltype_col is not None:
         real = ad.read_h5ad(args.adata_real)
@@ -166,7 +166,7 @@ def run_evaluation(args: ap.Namespace):
             results = evaluator.compute(
                 profile=args.profile,
                 metric_configs=metric_kwargs,
-                skip_metrics=to_skip,
+                skip_metrics=skip_metrics,
             )
             results.write_csv(os.path.join(args.outdir, f"{ct}_results.csv"))
 
@@ -185,6 +185,8 @@ def run_evaluation(args: ap.Namespace):
             allow_discrete=args.allow_discrete,
         )
         results = evaluator.compute(
-            profile=args.profile, metric_configs=metric_kwargs, skip_metrics=to_skip
+            profile=args.profile,
+            metric_configs=metric_kwargs,
+            skip_metrics=skip_metrics,
         )
         results.write_csv(os.path.join(args.outdir, "results.csv"))
