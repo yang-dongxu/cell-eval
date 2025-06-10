@@ -100,6 +100,90 @@ def edistance(
     return pearsonr(d_real, d_pred).correlation
 
 
+def discrimination_score_expr(data: PerturbationAnndataPair) -> dict[str, float]:
+    """Compute perturbation discrimination score using expression data (X) with L1 norm."""
+    return _discrimination_score_base(
+        data=data, embed_key=None, distance_ord=1, exclude_target_gene=True
+    )
+
+
+def discrimination_score_emb(
+    data: PerturbationAnndataPair, embed_key: str = "X_pca"
+) -> dict[str, float]:
+    """Compute perturbation discrimination score using embedding data with L2 norm."""
+    return _discrimination_score_base(
+        data=data, embed_key=embed_key, distance_ord=2, exclude_target_gene=False
+    )
+
+
+def _discrimination_score_base(
+    data: PerturbationAnndataPair,
+    embed_key: str | None = None,
+    distance_ord: int = 1,
+    exclude_target_gene: bool = True,
+) -> dict[str, float]:
+    """Base implementation for discrimination score computation.
+
+    Args:
+        data: PerturbationAnndataPair containing real and predicted data
+        embed_key: Key for embedding data in obsm, None for expression data
+        distance_ord: Order of norm for distance calculation (1 for L1, 2 for L2)
+        exclude_target_gene: Whether to exclude target gene from calculation
+
+    Returns:
+        Dictionary mapping perturbation names to normalized ranks
+    """
+    # Compute perturbation effects for all perturbations
+    real_effects = np.vstack(
+        [
+            d.perturbation_effect(which="real", abs=True)
+            for d in data.iter_delta_arrays(embed_key=embed_key)
+        ]
+    )
+    pred_effects = np.vstack(
+        [
+            d.perturbation_effect(which="pred", abs=True)
+            for d in data.iter_delta_arrays(embed_key=embed_key)
+        ]
+    )
+
+    norm_ranks = {}
+    for p_idx, p in enumerate(data.perts):
+        # Determine which features to include in the comparison
+        if exclude_target_gene and embed_key is None:
+            # For expression data, exclude the target gene
+            include_mask = np.flatnonzero(data.genes != p)
+        else:
+            # For embedding data or when not excluding target gene, use all features
+            include_mask = np.ones(real_effects.shape[1], dtype=bool)
+
+        # Get the predicted effect for current perturbation
+        pred_effect = pred_effects[p_idx, include_mask]
+
+        # Compute distances to all real effects
+        distances = np.array(
+            [
+                np.linalg.norm(
+                    real_effects[i, include_mask] - pred_effect, ord=distance_ord
+                )
+                for i in range(real_effects.shape[0])
+            ]
+        )
+
+        # Sort by distance (ascending - lower distance = better match)
+        sorted_indices = np.argsort(distances)
+
+        # Find rank of the correct perturbation
+        p_index = np.flatnonzero(data.perts == p)[0]
+        rank = np.flatnonzero(sorted_indices == p_index)[0]
+
+        # Normalize rank by total number of perturbations
+        norm_rank = rank / data.perts.size
+        norm_ranks[str(p)] = norm_rank
+
+    return norm_ranks
+
+
 def discrimination_score(
     data: PerturbationAnndataPair, embed_key: str | None = None
 ) -> dict[str, float]:

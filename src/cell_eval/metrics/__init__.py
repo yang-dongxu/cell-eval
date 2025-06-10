@@ -3,6 +3,8 @@
 from ._anndata import (
     ClusteringAgreement,
     discrimination_score,
+    discrimination_score_expr,
+    discrimination_score_emb,
     mae,
     mae_delta,
     mse,
@@ -38,6 +40,8 @@ __all__ = [
     "mse_delta",
     "mae_delta",
     "discrimination_score",
+    "discrimination_score_expr",
+    "discrimination_score_emb",
     # DE metrics
     "DEDirectionMatch",
     "DEOverlapMetric",

@@ -2,6 +2,8 @@ from .._types import MetricType
 from ._anndata import (
     ClusteringAgreement,
     discrimination_score,
+    discrimination_score_expr,
+    discrimination_score_emb,
     edistance,
     mae,
     mae_delta,
@@ -68,6 +70,20 @@ metrics_registry.register(
     metric_type=MetricType.ANNDATA_PAIR,
     description="Determines similarity of each pred representation to real via normalized rank of cosine similarity",
     func=discrimination_score,
+)
+
+metrics_registry.register(
+    name="discrimination_score_expr",
+    metric_type=MetricType.ANNDATA_PAIR,
+    description="Determines similarity of each pred expression to real via normalized rank of Manhattan distance",
+    func=discrimination_score_expr,
+)
+
+metrics_registry.register(
+    name="discrimination_score_emb",
+    metric_type=MetricType.ANNDATA_PAIR,
+    description="Determines similarity of each pred embedding to real via normalized rank of L2 distance",
+    func=discrimination_score_emb,
 )
 
 metrics_registry.register(
