@@ -3,6 +3,7 @@ from typing import Iterator, Literal
 
 import anndata as ad
 import numpy as np
+from tqdm import tqdm
 
 
 @dataclass(frozen=True)
@@ -96,7 +97,7 @@ class PerturbationAnndataPair:
         self, embed_key: str | None = None
     ) -> Iterator["DeltaArrays"]:
         """Iterate over delta arrays for all perturbations."""
-        for pert in self.perts:
+        for pert in tqdm(self.perts, desc="Iterating over perturbations..."):
             yield self.build_delta_array(pert, embed_key=embed_key)
 
 
