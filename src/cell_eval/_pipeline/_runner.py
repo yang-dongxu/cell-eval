@@ -118,6 +118,14 @@ class MetricPipeline:
         if kwargs:
             self._metric_configs[name] = kwargs
 
+    def skip_metrics(
+        self,
+        to_skip: list[str] | str,
+    ):
+        if isinstance(to_skip, str):
+            to_skip = [to_skip]
+        self._metrics = [metric for metric in self._metrics if metric not in to_skip]
+
     def _compute_metric(
         self,
         name: str,

@@ -105,6 +105,7 @@ class MetricsEvaluator:
         self,
         profile: Literal["full", "minimal", "de", "anndata"] = "full",
         metric_configs: dict[str, dict[str, Any]] | None = None,
+        skip_metrics: list[str] | None = None,
         basename: str = "results.csv",
         write_csv: bool = True,
     ) -> pl.DataFrame:
@@ -112,6 +113,8 @@ class MetricsEvaluator:
             profile=profile,
             metric_configs=metric_configs,
         )
+        if skip_metrics is not None:
+            pipeline.skip_metrics(skip_metrics)
         pipeline.compute_de_metrics(self.de_comparison)
         pipeline.compute_anndata_metrics(self.anndata_pair)
         results = pipeline.get_results()
