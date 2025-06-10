@@ -63,12 +63,14 @@ metrics_registry.register(
     func=mae_delta,
 )
 
-metrics_registry.register(
-    name="discrimination_score",
-    metric_type=MetricType.ANNDATA_PAIR,
-    description="Determines similarity of each pred representation to real via normalized rank of cosine similarity",
-    func=discrimination_score,
-)
+for distance_metric in ["l1", "l2", "cosine"]:
+    metrics_registry.register(
+        name=f"discrimination_score_{distance_metric}",
+        metric_type=MetricType.ANNDATA_PAIR,
+        description=f"Determines similarity of each pred representation to real via normalized rank: {distance_metric}",
+        func=discrimination_score,
+        kwargs={"metric": distance_metric},
+    )
 
 metrics_registry.register(
     name="pearson_edistance",

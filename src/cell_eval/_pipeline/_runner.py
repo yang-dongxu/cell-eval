@@ -13,7 +13,7 @@ MINIMAL_METRICS = [
     "pearson_delta",
     "mse",
     "mae",
-    "discrimination_score",
+    "discrimination_score_l1",
     "top_N_overlap",
     "de_nsig_counts",
 ]

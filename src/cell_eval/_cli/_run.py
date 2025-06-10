@@ -56,6 +56,12 @@ def parse_args_run(parser: ap.ArgumentParser):
         help="Name of the column designated celltype to split results by (optional)",
     )
     parser.add_argument(
+        "--embed-key",
+        type=str,
+        default=None,
+        help="Key for embedded data (.obsm) in the AnnData object used in some metrics (evaluated over .X otherwise)",
+    )
+    parser.add_argument(
         "-o",
         "--outdir",
         type=str,
@@ -111,6 +117,16 @@ def run_evaluation(args: ap.Namespace):
     from cell_eval import MetricsEvaluator
     from cell_eval.utils import split_anndata_on_celltype
 
+    # Set metric config for embed key if provided
+    metric_kwargs = (
+        {
+            "discrimination_score_l2": {"embed_key": args.embed_key},
+            "discrimination_score_cosine": {"embed_key": args.embed_key},
+        }
+        if args.embed_key is not None
+        else {}
+    )
+
     if args.celltype_col is not None:
         real = ad.read_h5ad(args.adata_real)
         pred = ad.read_h5ad(args.adata_pred)
@@ -140,7 +156,9 @@ def run_evaluation(args: ap.Namespace):
                 allow_discrete=args.allow_discrete,
                 prefix=ct,
             )
-            results = evaluator.compute(profile=args.profile)
+            results = evaluator.compute(
+                profile=args.profile, metric_configs=metric_kwargs
+            )
             results.write_csv(os.path.join(args.outdir, f"{ct}_results.csv"))
 
     else:
@@ -157,5 +175,5 @@ def run_evaluation(args: ap.Namespace):
             outdir=args.outdir,
             allow_discrete=args.allow_discrete,
         )
-        results = evaluator.compute(profile=args.profile)
+        results = evaluator.compute(profile=args.profile, metric_configs=metric_kwargs)
         results.write_csv(os.path.join(args.outdir, "results.csv"))

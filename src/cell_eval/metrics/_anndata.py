@@ -14,7 +14,6 @@ from sklearn.metrics import (
     adjusted_rand_score,
     normalized_mutual_info_score,
 )
-from sklearn.metrics.pairwise import cosine_similarity
 
 from .._types import PerturbationAnndataPair
 
@@ -101,9 +100,27 @@ def edistance(
 
 
 def discrimination_score(
-    data: PerturbationAnndataPair, embed_key: str | None = None
+    data: PerturbationAnndataPair,
+    metric: str = "l1",
+    embed_key: str | None = None,
+    exclude_target_gene: bool = True,
 ) -> dict[str, float]:
-    """Compute perturbation discrimination score."""
+    """Base implementation for discrimination score computation.
+
+    Args:
+        data: PerturbationAnndataPair containing real and predicted data
+        embed_key: Key for embedding data in obsm, None for expression data
+        metric: Metric for distance calculation (e.g., "l1", "l2", see `scipy.metrics.pairwise.distance_metrics`)
+        exclude_target_gene: Whether to exclude target gene from calculation
+
+    Returns:
+        Dictionary mapping perturbation names to normalized ranks
+    """
+    if metric == "l1" or metric == "manhattan" or metric == "cityblock":
+        # Ignore the embedding key for L1
+        embed_key = None
+
+    # Compute perturbation effects for all perturbations
     real_effects = np.vstack(
         [
             d.perturbation_effect(which="real", abs=True)
@@ -119,25 +136,36 @@ def discrimination_score(
 
     norm_ranks = {}
     for p_idx, p in enumerate(data.perts):
-        # If no embed key, use gene names to exclude target gene
-        if not embed_key:
+        # Determine which features to include in the comparison
+        if exclude_target_gene and not embed_key:
+            # For expression data, exclude the target gene
             include_mask = np.flatnonzero(data.genes != p)
         else:
+            # For embedding data or when not excluding target gene, use all features
             include_mask = np.ones(real_effects.shape[1], dtype=bool)
 
-        sim = cosine_similarity(
+        # Compute distances to all real effects
+        distances = skm.pairwise_distances(
             real_effects[
                 :, include_mask
             ],  # compare to all real effects across perturbations
             pred_effects[p_idx, include_mask].reshape(
                 1, -1
             ),  # select pred effect for current perturbation
+            metric=metric,
         ).flatten()
-        sorted_rev = np.argsort(sim)[::-1]
+
+        # Sort by distance (ascending - lower distance = better match)
+        sorted_indices = np.argsort(distances)
+
+        # Find rank of the correct perturbation
         p_index = np.flatnonzero(data.perts == p)[0]
-        rank = np.flatnonzero(sorted_rev == p_index)[0]
+        rank = np.flatnonzero(sorted_indices == p_index)[0]
+
+        # Normalize rank by total number of perturbations
         norm_rank = rank / data.perts.size
         norm_ranks[str(p)] = norm_rank
+
     return norm_ranks
 
 
