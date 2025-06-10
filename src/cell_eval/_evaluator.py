@@ -69,6 +69,9 @@ class MetricsEvaluator:
         prefix: str | None = None,
         pdex_kwargs: dict[str, Any] = {},
     ):
+        # Enable a global string cache for categorical columns
+        pl.enable_string_cache()
+
         if os.path.exists(outdir):
             logger.warning(
                 f"Output directory {outdir} already exists, potential overwrite occurring"
@@ -82,6 +85,7 @@ class MetricsEvaluator:
             pert_col=pert_col,
             allow_discrete=allow_discrete,
         )
+
         self.de_comparison = _build_de_comparison(
             anndata_pair=self.anndata_pair,
             de_pred=de_pred,
