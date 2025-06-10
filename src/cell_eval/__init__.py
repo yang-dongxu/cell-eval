@@ -1,8 +1,9 @@
 from ._evaluator import MetricsEvaluator
 from ._pipeline import MetricPipeline
 from ._types import (
+    BulkArrays,
+    CellArrays,
     DEComparison,
-    DeltaArrays,
     DEResults,
     DESortBy,
     MetricType,
@@ -15,11 +16,12 @@ __all__ = [
     "MetricsEvaluator",
     # Types
     "DEComparison",
-    "DeltaArrays",
     "DEResults",
     "DESortBy",
     "MetricType",
     "PerturbationAnndataPair",
+    "BulkArrays",
+    "CellArrays",
     "initialize_de_comparison",
     # Pipeline
     "MetricPipeline",

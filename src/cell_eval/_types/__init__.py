@@ -1,4 +1,4 @@
-from ._anndata import DeltaArrays, PerturbationAnndataPair
+from ._anndata import BulkArrays, CellArrays, PerturbationAnndataPair
 from ._de import DEComparison, DEResults, initialize_de_comparison
 from ._enums import DESortBy, MetricType
 
@@ -9,5 +9,6 @@ __all__ = [
     "DEResults",
     "initialize_de_comparison",
     "PerturbationAnndataPair",
-    "DeltaArrays",
+    "BulkArrays",
+    "CellArrays",
 ]

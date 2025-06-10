@@ -83,7 +83,7 @@ def edistance(
     d_real = np.zeros(data.perts.size)
     d_pred = np.zeros(data.perts.size)
 
-    for idx, delta in enumerate(data.iter_delta_arrays(embed_key=embed_key)):
+    for idx, delta in enumerate(data.iter_cell_arrays(embed_key=embed_key)):
         d_real[idx] = _edistance(
             delta.pert_real, delta.ctrl_real, metric=metric, **kwargs
         )
@@ -124,13 +124,13 @@ def discrimination_score(
     real_effects = np.vstack(
         [
             d.perturbation_effect(which="real", abs=True)
-            for d in data.iter_delta_arrays(embed_key=embed_key)
+            for d in data.iter_bulk_arrays(embed_key=embed_key)
         ]
     )
     pred_effects = np.vstack(
         [
             d.perturbation_effect(which="pred", abs=True)
-            for d in data.iter_delta_arrays(embed_key=embed_key)
+            for d in data.iter_bulk_arrays(embed_key=embed_key)
         ]
     )
 
@@ -177,19 +177,19 @@ def _generic_evaluation(
 ) -> dict[str, float]:
     """Generic evaluation function for anndata pair."""
     res = {}
-    for delta_array in data.iter_delta_arrays(embed_key=embed_key):
+    for bulk_array in data.iter_bulk_arrays(embed_key=embed_key):
         if use_delta:
-            x = delta_array.perturbation_effect(which="pred", abs=False)
-            y = delta_array.perturbation_effect(which="real", abs=False)
+            x = bulk_array.perturbation_effect(which="pred", abs=False)
+            y = bulk_array.perturbation_effect(which="real", abs=False)
         else:
-            x = delta_array.pert_pred.mean(axis=0)
-            y = delta_array.pert_real.mean(axis=0)
+            x = bulk_array.pert_pred
+            y = bulk_array.pert_real
 
         result = func(x, y)
         if isinstance(result, tuple):
             result = result[0]
 
-        res[delta_array.pert] = float(result)
+        res[bulk_array.key] = float(result)
 
     return res
 
