@@ -14,6 +14,8 @@ class PerturbationAnndataPair:
     pert_col: str
     control_pert: str
     perts: np.ndarray[str] = field(init=False)
+    pert_mask_real: dict[str, np.ndarray[int]] = field(init=False)
+    pert_mask_pred: dict[str, np.ndarray[int]] = field(init=False)
     genes: np.ndarray[str] = field(init=False)
 
     def __post_init__(self) -> None:
@@ -31,8 +33,11 @@ class PerturbationAnndataPair:
             )
         object.__setattr__(self, "genes", var_names_real)
 
-        perts_real = np.unique(self.real.obs[self.pert_col])
-        perts_pred = np.unique(self.pred.obs[self.pert_col])
+        pert_mask_real = self.pert_mask(self.real.obs[self.pert_col].values)
+        pert_mask_pred = self.pert_mask(self.pred.obs[self.pert_col].values)
+
+        perts_real = sorted([k for k in pert_mask_real.keys()])
+        perts_pred = sorted([k for k in pert_mask_pred.keys()])
         if not np.array_equal(perts_real, perts_pred):
             raise ValueError(
                 f"Perturbation mismatch: real {perts_real} != pred {perts_pred}"
@@ -40,6 +45,13 @@ class PerturbationAnndataPair:
         perts = np.union1d(perts_real, perts_pred)
         perts = np.array([p for p in perts if p != self.control_pert])
         object.__setattr__(self, "perts", perts)
+        object.__setattr__(self, "pert_mask_real", pert_mask_real)
+        object.__setattr__(self, "pert_mask_pred", pert_mask_pred)
+
+    @staticmethod
+    def pert_mask(perts: np.ndarray[str]) -> dict[str, np.ndarray[int]]:
+        unique_perts, inverse = np.unique(perts, return_inverse=True)
+        return {pert: np.where(inverse == i)[0] for i, pert in enumerate(unique_perts)}
 
     def get_perts(self, include_control: bool = False) -> np.ndarray[str]:
         """Get all perturbations."""
@@ -51,10 +63,10 @@ class PerturbationAnndataPair:
         self, pert: str, embed_key: str | None = None
     ) -> "DeltaArrays":
         """Build delta array for a perturbation."""
-        mask_pert_real = self.real.obs[self.pert_col] == pert
-        mask_pert_pred = self.pred.obs[self.pert_col] == pert
-        mask_ctrl_real = self.real.obs[self.pert_col] == self.control_pert
-        mask_ctrl_pred = self.pred.obs[self.pert_col] == self.control_pert
+        mask_pert_real = self.pert_mask_real[pert]
+        mask_pert_pred = self.pert_mask_pred[pert]
+        mask_ctrl_real = self.pert_mask_real[self.control_pert]
+        mask_ctrl_pred = self.pert_mask_pred[self.control_pert]
 
         if not embed_key:
             pert_real = self.real.X[mask_pert_real, :]
