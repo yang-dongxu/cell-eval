@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
-VALID_ENCODINGS = [64, 32, 16]
+VALID_ENCODINGS = [64, 32]
 
 
 def parse_args_prep(parser: ap.ArgumentParser):
