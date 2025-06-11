@@ -38,8 +38,8 @@ class MetricsEvaluator:
         Perturbation column name.
     de_method: str = "wilcoxon"
         Differential expression method.
-    num_workers: int = -1
-        Number of workers for parallel differential expression.
+    num_threads: int = -1
+        Number of threads for parallel differential expression.
     batch_size: int = 100
         Batch size for parallel differential expression.
     outdir: str = "./cell-eval-outdir"
@@ -48,7 +48,7 @@ class MetricsEvaluator:
         Allow discrete data.
     prefix: str | None = None
         Prefix for output files.
-    pdex_kwargs: dict[str, Any] = {}
+    pdex_kwargs: dict[str, Any] | None = None
         Keyword arguments for parallel_differential_expression.
         These will overwrite arguments passed to MetricsEvaluator.__init__ if they conflict.
     """
@@ -67,7 +67,7 @@ class MetricsEvaluator:
         outdir: str = "./cell-eval-outdir",
         allow_discrete: bool = False,
         prefix: str | None = None,
-        pdex_kwargs: dict[str, Any] = {},
+        pdex_kwargs: dict[str, Any] | None = None,
     ):
         # Enable a global string cache for categorical columns
         pl.enable_string_cache()
@@ -95,7 +95,7 @@ class MetricsEvaluator:
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
-            pdex_kwargs=pdex_kwargs,
+            pdex_kwargs=pdex_kwargs or {},
         )
 
         self.outdir = outdir
@@ -168,13 +168,13 @@ def _validate_normlog(
     if suspected_discrete(adata.X, n_cells):
         if allow_discrete:
             logger.warning(
-                "Error: adata_pred appears not to be log-transformed. We expect normed+logged input"
-                "If this is an error, rerun with `allow_discrete=True`"
+                "Error: adata appears not to be log-transformed. We expect normed+logged input"
+                " If this is an error, rerun with `allow_discrete=True`"
             )
             return
         raise ValueError(
-            "Error: adata_pred appears not to be log-transformed. We expect normed+logged input"
-            "If this is an error, rerun with `allow_discrete=True`"
+            "Error: adata appears not to be log-transformed. We expect normed+logged input"
+            " If this is an error, rerun with `allow_discrete=True`"
         )
 
 
@@ -187,7 +187,7 @@ def _build_de_comparison(
     batch_size: int = 100,
     outdir: str | None = None,
     prefix: str | None = None,
-    pdex_kwargs: dict[str, Any] = {},
+    pdex_kwargs: dict[str, Any] | None = None,
 ):
     return initialize_de_comparison(
         real=_load_or_build_de(
@@ -199,7 +199,7 @@ def _build_de_comparison(
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
-            pdex_kwargs=pdex_kwargs,
+            pdex_kwargs=pdex_kwargs or {},
         ),
         pred=_load_or_build_de(
             mode="pred",
@@ -210,7 +210,7 @@ def _build_de_comparison(
             batch_size=batch_size,
             outdir=outdir,
             prefix=prefix,
-            pdex_kwargs=pdex_kwargs,
+            pdex_kwargs=pdex_kwargs or {},
         ),
     )
 
@@ -221,8 +221,9 @@ def _build_pdex_kwargs(
     num_workers: int,
     batch_size: int,
     metric: str,
-    pdex_kwargs: dict[str, Any] = {},
+    pdex_kwargs: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    pdex_kwargs = pdex_kwargs or {}
     if "reference" not in pdex_kwargs:
         pdex_kwargs["reference"] = reference
     if "groupby_key" not in pdex_kwargs:
@@ -233,8 +234,8 @@ def _build_pdex_kwargs(
         pdex_kwargs["batch_size"] = batch_size
     if "metric" not in pdex_kwargs:
         pdex_kwargs["metric"] = metric
-    if "as_polars" in pdex_kwargs or "as_polars" not in pdex_kwargs:
-        pdex_kwargs["as_polars"] = True  # overwrite
+    # always return polars DataFrames
+    pdex_kwargs["as_polars"] = True
     return pdex_kwargs
 
 
@@ -247,7 +248,7 @@ def _load_or_build_de(
     batch_size: int = 100,
     outdir: str | None = None,
     prefix: str | None = None,
-    pdex_kwargs: dict[str, Any] = {},
+    pdex_kwargs: dict[str, Any] | None = None,
 ) -> pl.DataFrame:
     if de_path is None:
         if anndata_pair is None:
@@ -259,7 +260,7 @@ def _load_or_build_de(
             num_workers=num_threads,
             metric=de_method,
             batch_size=batch_size,
-            pdex_kwargs=pdex_kwargs,
+            pdex_kwargs=pdex_kwargs or {},
         )
         frame = parallel_differential_expression(
             adata=anndata_pair.real if mode == "real" else anndata_pair.pred,
@@ -272,8 +273,8 @@ def _load_or_build_de(
         return frame  # type: ignore
     elif isinstance(de_path, str):
         logger.info(f"Reading {mode} DE results from {de_path}")
-        if len(pdex_kwargs) > 0:
-            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
+        if pdex_kwargs:
+            logger.warning("pdex_kwargs are ignored when reading from a CSV file")
         return pl.read_csv(
             de_path,
             schema_overrides={
@@ -282,12 +283,12 @@ def _load_or_build_de(
             },
         )
     elif isinstance(de_path, pl.DataFrame):
-        if len(pdex_kwargs) > 0:
-            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
+        if pdex_kwargs:
+            logger.warning("pdex_kwargs are ignored when reading from a CSV file")
         return de_path
     elif isinstance(de_path, pd.DataFrame):
-        if len(pdex_kwargs) > 0:
-            logger.warn("pdex_kwargs are ignored when reading from a CSV file")
+        if pdex_kwargs:
+            logger.warning("pdex_kwargs are ignored when reading from a CSV file")
         return pl.from_pandas(de_path)
     else:
         raise TypeError(f"Unexpected type for de_path: {type(de_path)}")

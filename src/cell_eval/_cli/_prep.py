@@ -65,7 +65,7 @@ def strip_anndata(
     if celltype_col:
         if celltype_col not in adata.obs:
             raise ValueError(
-                f"Provided perturbation column: {celltype_col} missing from anndata: {adata.obs.columns}"
+                f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
             )
     if encoding not in VALID_ENCODINGS:
         raise ValueError(f"Encoding must be in {VALID_ENCODINGS}")
