@@ -62,7 +62,8 @@ def build_random_anndata(
                     size=n_cells,
                     replace=True,
                 ),
-            }
+            },
+            index=np.arange(n_cells).astype(str),
         ),
     )
 
