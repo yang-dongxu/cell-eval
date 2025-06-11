@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
-VALID_ENCODINGS = [64, 32]
+VALID_ENCODINGS = [64, 32, 16]
 
 
 def parse_args_prep(parser: ap.ArgumentParser):
@@ -65,7 +65,7 @@ def strip_anndata(
     if celltype_col:
         if celltype_col not in adata.obs:
             raise ValueError(
-                f"Provided perturbation column: {celltype_col} missing from anndata: {adata.obs.columns}"
+                f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
             )
     if encoding not in VALID_ENCODINGS:
         raise ValueError(f"Encoding must be in {VALID_ENCODINGS}")
