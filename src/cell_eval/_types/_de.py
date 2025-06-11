@@ -127,6 +127,8 @@ class DEResults:
         fdr_threshold: Optional[float] = None,
     ) -> pl.DataFrame:
         """Get top genes per perturbation, optionally filtered by FDR."""
+        # Set FDR threshold if not provided
+        fdr_threshold = fdr_threshold if fdr_threshold is not None else 0.05
 
         descending = sort_by in {DESortBy.FOLD_CHANGE, DESortBy.ABS_FOLD_CHANGE}
 
