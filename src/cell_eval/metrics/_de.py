@@ -1,6 +1,5 @@
 """DE metrics module."""
 
-from dataclasses import dataclass
 from typing import Literal
 
 import numpy as np
@@ -10,79 +9,24 @@ from sklearn.metrics import auc, precision_recall_curve, roc_curve
 from .._types import DEComparison, DESortBy
 
 
-@dataclass
-class DEOverlapMetric:
-    """Base class for overlap-based DE metrics."""
+def de_overlap_metric(
+    data: DEComparison,
+    k: int | None,
+    metric: Literal["precision", "overlap"] = "overlap",
+    fdr_threshold: float = 0.05,
+    sort_by: DESortBy = DESortBy.ABS_FOLD_CHANGE,
+) -> dict[str, float]:
+    """Compute overlap between real and predicted DE genes.
 
-    def __init__(
-        self,
-        k: int | None = None,
-        topk: int | None = None,
-        fdr_threshold: float = 0.05,
-        sort_by: DESortBy = DESortBy.ABS_FOLD_CHANGE,
-    ) -> None:
-        self.k = k
-        self.topk = topk
-        self.fdr_threshold = fdr_threshold
-        self.sort_by = sort_by
+    Note: use `k` argument for measuring recall and use `topk` argument for measuring precision.
 
-    def __call__(self, data: DEComparison) -> dict[str, float]:
-        """Compute overlap between real and predicted DE genes."""
-        return data.compute_overlap(
-            k=self.k,
-            topk=self.topk,
-            fdr_threshold=self.fdr_threshold,
-            sort_by=self.sort_by,
-        )
-
-
-class TopNOverlap(DEOverlapMetric):
-    """Compute overlap of top N DE genes."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(k=-1, **kwargs)
-
-
-class Top50Overlap(DEOverlapMetric):
-    """Compute overlap of top 50 DE genes."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(k=50, **kwargs)
-
-
-class Top100Overlap(DEOverlapMetric):
-    """Compute overlap of top 100 DE genes."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(k=100, **kwargs)
-
-
-class Top200Overlap(DEOverlapMetric):
-    """Compute overlap of top 200 DE genes."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(k=200, **kwargs)
-
-
-class PrecisionAt50(DEOverlapMetric):
-    """Compute precision at 50."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(topk=50, **kwargs)
-
-
-class PrecisionAt100(DEOverlapMetric):
-    """Compute precision at 100."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(topk=100, **kwargs)
-
-
-class PrecisionAt200(DEOverlapMetric):
-    """Compute precision at 200."""
-
-    def __init__(self, **kwargs) -> None:
-        super().__init__(topk=200, **kwargs)
+    """
+    return data.compute_overlap(
+        k=k,
+        metric=metric,
+        fdr_threshold=fdr_threshold,
+        sort_by=sort_by,
+    )
 
 
 class DESpearmanSignificant:

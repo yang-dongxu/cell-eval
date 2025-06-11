@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from .._types import DEComparison, MetricType, PerturbationAnndataPair
 from .base import MetricInfo
@@ -19,7 +19,7 @@ class MetricRegistry:
             [PerturbationAnndataPair | DEComparison], float | dict[str, float]
         ],
         is_class: bool = False,
-        kwargs: dict[str, any] = None,
+        kwargs: dict[str, Any] | None = None,
     ):
         """
         Register a new metric.
@@ -43,7 +43,7 @@ class MetricRegistry:
             kwargs=kwargs,
         )
 
-    def update_metric_kwargs(self, name: str, kwargs: dict[str, any]) -> None:
+    def update_metric_kwargs(self, name: str, kwargs: dict[str, Any]) -> None:
         """
         Update the keyword arguments for a registered metric.
 
@@ -79,7 +79,7 @@ class MetricRegistry:
         self,
         name: str,
         data: PerturbationAnndataPair | DEComparison,
-        kwargs: dict[str, any] = None,
+        kwargs: dict[str, Any] | None = None,
     ) -> float | dict[str, float]:
         """
         Compute a metric on the provided data.

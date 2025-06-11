@@ -15,15 +15,9 @@ from ._de import (
     DESigGenesRecall,
     DESpearmanLFC,
     DESpearmanSignificant,
-    PrecisionAt50,
-    PrecisionAt100,
-    PrecisionAt200,
-    Top50Overlap,
-    Top100Overlap,
-    Top200Overlap,
-    TopNOverlap,
     compute_pr_auc,
     compute_roc_auc,
+    de_overlap_metric,
 )
 from ._registry import MetricRegistry
 
@@ -79,61 +73,24 @@ metrics_registry.register(
     func=edistance,
 )
 
-metrics_registry.register(
-    name="top_N_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top k DE genes",
-    func=TopNOverlap,
-    is_class=True,
-)
 
-metrics_registry.register(
-    name="top_50_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top 50 DE genes",
-    func=Top50Overlap,
-    is_class=True,
-)
+for n in [None, 50, 100, 200]:
+    repr = n if n else "N"
+    metrics_registry.register(
+        name=f"overlap_at_{repr}",
+        metric_type=MetricType.DE,
+        description=f"Overlap of top {repr} DE genes",
+        func=de_overlap_metric,
+        kwargs={"k": n, "metric": "overlap"},
+    )
+    metrics_registry.register(
+        name=f"precision_at_{repr}",
+        metric_type=MetricType.DE,
+        description=f"Precision of top {repr} DE genes",
+        func=de_overlap_metric,
+        kwargs={"k": n, "metric": "precision"},
+    )
 
-metrics_registry.register(
-    name="top_100_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top 100 DE genes",
-    func=Top100Overlap,
-    is_class=True,
-)
-
-metrics_registry.register(
-    name="top_200_overlap",
-    metric_type=MetricType.DE,
-    description="Overlap of top 200 DE genes",
-    func=Top200Overlap,
-    is_class=True,
-)
-
-metrics_registry.register(
-    name="precision_at_50",
-    metric_type=MetricType.DE,
-    description="Precision at 50",
-    func=PrecisionAt50,
-    is_class=True,
-)
-
-metrics_registry.register(
-    name="precision_at_100",
-    metric_type=MetricType.DE,
-    description="Precision at 100",
-    func=PrecisionAt100,
-    is_class=True,
-)
-
-metrics_registry.register(
-    name="precision_at_200",
-    metric_type=MetricType.DE,
-    description="Precision at 200",
-    func=PrecisionAt200,
-    is_class=True,
-)
 
 metrics_registry.register(
     name="de_spearman_sig",
