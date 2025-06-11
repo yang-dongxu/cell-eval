@@ -74,22 +74,16 @@ metrics_registry.register(
 )
 
 
-for n in [None, 50, 100, 200]:
-    repr = n if n else "N"
-    metrics_registry.register(
-        name=f"overlap_at_{repr}",
-        metric_type=MetricType.DE,
-        description=f"Overlap of top {repr} DE genes",
-        func=de_overlap_metric,
-        kwargs={"k": n, "metric": "overlap"},
-    )
-    metrics_registry.register(
-        name=f"precision_at_{repr}",
-        metric_type=MetricType.DE,
-        description=f"Precision of top {repr} DE genes",
-        func=de_overlap_metric,
-        kwargs={"k": n, "metric": "precision"},
-    )
+for metric in ["overlap", "precision"]:
+    for n in [None, 50, 100, 200, 500]:
+        repr = n if n else "N"
+        metrics_registry.register(
+            name=f"{metric}_at_{repr}",
+            metric_type=MetricType.DE,
+            description=f"Overlap metric ({metric}) of top {repr} DE genes",
+            func=de_overlap_metric,
+            kwargs={"k": n, "metric": metric},
+        )
 
 
 metrics_registry.register(
