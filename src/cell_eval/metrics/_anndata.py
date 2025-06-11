@@ -238,7 +238,13 @@ class ClusteringAgreement:
             sc.pp.neighbors(
                 adata, n_neighbors=min(n_neighbors, adata.n_obs - 1), use_rep="X"
             )
-        sc.tl.leiden(adata, resolution=resolution, key_added=key_added)
+        sc.tl.leiden(
+            adata,
+            resolution=resolution,
+            key_added=key_added,
+            flavor="igraph",
+            n_iterations=2,
+        )
 
     @staticmethod
     def _centroid_ann(
