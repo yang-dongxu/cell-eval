@@ -92,7 +92,7 @@ class PerturbationAnndataPair:
         if issparse(matrix):
             # Convert sparse matrix to dense array
             logger.info("Converting sparse matrix to dense array for bulk calculation")
-            matrix = matrix.toarray()
+            matrix = matrix.toarray()  # type: ignore
 
         # Create a polars dataframe with the groupby key
         frame = pl.DataFrame(
