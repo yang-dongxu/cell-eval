@@ -5,6 +5,7 @@ from typing import Iterator, Literal
 import anndata as ad
 import numpy as np
 import polars as pl
+from scipy.sparse import issparse
 from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
@@ -86,9 +87,16 @@ class PerturbationAnndataPair:
         embed_key: str | None = None,
     ) -> tuple[np.ndarray[str], np.ndarray]:
         """Get bulk anndata for a groupby key."""
+
+        matrix = adata.X if not embed_key else adata.obsm[embed_key]
+        if issparse(matrix):
+            # Convert sparse matrix to dense array
+            logger.info("Converting sparse matrix to dense array for bulk calculation")
+            matrix = matrix.toarray()  # type: ignore
+
         # Create a polars dataframe with the groupby key
         frame = pl.DataFrame(
-            adata.X if not embed_key else adata.obsm[embed_key],
+            matrix,
         ).with_columns(
             groupby_key=adata.obs[groupby_key].to_numpy(str),  # type: ignore
         )

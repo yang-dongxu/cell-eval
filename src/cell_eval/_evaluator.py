@@ -108,10 +108,12 @@ class MetricsEvaluator:
         skip_metrics: list[str] | None = None,
         basename: str = "results.csv",
         write_csv: bool = True,
+        break_on_error: bool = False,
     ) -> pl.DataFrame:
         pipeline = MetricPipeline(
             profile=profile,
             metric_configs=metric_configs,
+            break_on_error=break_on_error,
         )
         if skip_metrics is not None:
             pipeline.skip_metrics(skip_metrics)

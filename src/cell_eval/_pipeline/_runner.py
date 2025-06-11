@@ -26,16 +26,19 @@ class MetricPipeline:
         self,
         profile: Literal["full", "minimal", "de", "anndata"] | None = "full",
         metric_configs: dict[str, dict[str, any]] | None = None,
+        break_on_error: bool = False,
     ) -> None:
         """Initialize pipeline.
 
         Args:
             profile: Which set of metrics to compute ('full', 'de', 'anndata', or None)
             metric_configs: Dictionary mapping metric names to their configuration kwargs
+            break_on_error: Whether to stop the pipeline on error
         """
         self._metrics: list[str] = []
         self._results: list[MetricResult] = []
         self._metric_configs = metric_configs or {}
+        self._break_on_error = break_on_error
 
         match profile:
             case "full":
@@ -169,8 +172,10 @@ class MetricPipeline:
                             perturbation=pert,
                         )
                     )
-        except Exception as e:
-            logger.error(f"Error computing metric '{name}': {e}")
+        except Exception as error:
+            logger.error(f"Error computing metric '{name}': {error}")
+            if self._break_on_error:
+                raise error
 
     def compute_de_metrics(self, data: DEComparison) -> None:
         """Compute DE metrics."""
