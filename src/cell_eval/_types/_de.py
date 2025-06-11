@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Iterator, Optional
+from typing import Iterator, Literal
 
 import numpy as np
 import polars as pl
@@ -124,7 +124,7 @@ class DEResults:
     def get_top_genes(
         self,
         sort_by: DESortBy,
-        fdr_threshold: Optional[float] = None,
+        fdr_threshold: float | None = None,
     ) -> pl.DataFrame:
         """Get top genes per perturbation, optionally filtered by FDR."""
         # Set FDR threshold if not provided
@@ -193,9 +193,9 @@ class DEComparison:
 
     def compute_overlap(
         self,
-        k: Optional[int] = None,
-        topk: Optional[int] = None,
-        fdr_threshold: Optional[float] = None,
+        k: int | None,
+        metric: Literal["overlap", "precision"] = "overlap",
+        fdr_threshold: float | None = None,
         sort_by: DESortBy = DESortBy.ABS_FOLD_CHANGE,
     ) -> dict[str, float]:
         """
@@ -203,16 +203,12 @@ class DEComparison:
 
         Args:
             k: If specified, use top k genes from real data
-            topk: If specified, use top k genes from predicted data
             fdr_threshold: If specified, only consider genes below this FDR
             sort_by: Metric to sort genes by
 
         Returns:
             Dictionary mapping perturbation names to overlap scores
         """
-        if k is not None and topk is not None:
-            raise ValueError("Provide only one of k or topk")
-
         real_sig_rank_matrix = self.real.get_top_genes(
             sort_by=sort_by, fdr_threshold=fdr_threshold
         )
@@ -239,19 +235,21 @@ class DEComparison:
             real_genes = real_sig_rank_matrix[pert].drop_nulls().to_numpy()
             pred_genes = pred_sig_rank_matrix[pert].drop_nulls().to_numpy()
 
-            # Apply k/topk limits
-            if k == -1:
-                k_eff = len(real_genes)
+            match metric:
+                case "overlap":
+                    k_eff = real_genes.size if not k else k
+                    k_eff = min(k_eff, real_genes.size)
+                case "precision":
+                    k_eff = pred_genes.size if not k else k
+                    k_eff = min(k_eff, pred_genes.size)
+                case _:
+                    raise ValueError(f"Invalid metric: {metric}")
+
+            if k_eff == 0:
+                overlaps[pert] = 0.0
             else:
-                k_eff = k if k is not None else len(real_genes)
-
-            real_subset = real_genes[:k_eff]
-            pred_subset = pred_genes[: (topk or k_eff)]
-
-            # Calculate overlap
-            denom = pred_subset.size if topk else real_subset.size
-            overlaps[pert] = (
-                np.intersect1d(real_subset, pred_subset).size / denom if denom else 0.0
-            )
+                real_subset = real_genes[:k_eff]
+                pred_subset = pred_genes[:k_eff]
+                overlaps[pert] = np.intersect1d(real_subset, pred_subset).size / k_eff
 
         return overlaps
