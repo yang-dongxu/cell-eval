@@ -14,7 +14,8 @@ MINIMAL_METRICS = [
     "mse",
     "mae",
     "discrimination_score_l1",
-    "top_N_overlap",
+    "overlap_at_N",
+    "precision_at_N",
     "de_nsig_counts",
 ]
 
