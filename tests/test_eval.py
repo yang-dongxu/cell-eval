@@ -20,9 +20,8 @@ def test_missing_adata_input_vars():
 
     with pytest.raises(Exception):
         MetricsEvaluator(
-            adata_pred=None,
+            adata_pred=adata_real,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
             outdir=OUTDIR,
@@ -105,7 +104,6 @@ def test_broken_adata_missing_pertcol_in_real():
         MetricsEvaluator(
             adata_pred=adata_pred,
             adata_real=adata_real,
-            include_dist_metrics=True,
             control_pert=CONTROL_VAR,
             pert_col=PERT_COL,
             outdir=OUTDIR,
@@ -190,7 +188,9 @@ def test_eval_simple():
         control_pert="control",
         pert_col="perturbation",
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
 
 
 def test_eval_missing_celltype_col():
@@ -209,7 +209,9 @@ def test_eval_missing_celltype_col():
         control_pert="control",
         pert_col="perturbation",
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
 
 
 def test_eval_pdex_kwargs():
@@ -224,7 +226,9 @@ def test_eval_pdex_kwargs():
             "exp_post_agg": True,
         },
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
 
 
 def test_eval_pdex_kwargs_duplicated():
@@ -240,7 +244,9 @@ def test_eval_pdex_kwargs_duplicated():
             "num_workers": 4,
         },
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
 
 
 def validate_expected_files(
@@ -272,7 +278,9 @@ def test_eval():
         pert_col=PERT_COL,
         outdir=OUTDIR,
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
     validate_expected_files(OUTDIR)
 
 
@@ -287,7 +295,9 @@ def test_eval_prefix():
         outdir=OUTDIR,
         prefix="arbitrary",
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
     validate_expected_files(OUTDIR, prefix="arbitrary")
 
 
@@ -301,7 +311,10 @@ def test_minimal_eval():
         pert_col=PERT_COL,
         outdir=OUTDIR,
     )
-    evaluator.compute(profile="minimal")
+    evaluator.compute(
+        profile="minimal",
+        break_on_error=True,
+    )
     validate_expected_files(OUTDIR)
 
 
@@ -315,7 +328,9 @@ def test_eval_sparse():
         pert_col=PERT_COL,
         outdir=OUTDIR,
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
     validate_expected_files(OUTDIR)
 
 
@@ -329,7 +344,9 @@ def test_eval_downsampled_cells():
         pert_col=PERT_COL,
         outdir=OUTDIR,
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
     validate_expected_files(OUTDIR)
 
 
@@ -344,5 +361,7 @@ def test_eval_alt_metric():
         outdir=OUTDIR,
         de_method="anderson",
     )
-    evaluator.compute()
+    evaluator.compute(
+        break_on_error=True,
+    )
     validate_expected_files(OUTDIR)
