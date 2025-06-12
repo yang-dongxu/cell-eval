@@ -1,7 +1,6 @@
 import logging
-from typing import Callable, Literal
+from typing import Any, Callable, Literal
 
-import numpy as np
 import polars as pl
 
 from .._types import DEComparison, MetricType, PerturbationAnndataPair
@@ -26,7 +25,7 @@ class MetricPipeline:
     def __init__(
         self,
         profile: Literal["full", "minimal", "de", "anndata"] | None = "full",
-        metric_configs: dict[str, dict[str, any]] | None = None,
+        metric_configs: dict[str, dict[str, Any]] | None = None,
         break_on_error: bool = False,
     ) -> None:
         """Initialize pipeline.
@@ -66,7 +65,7 @@ class MetricPipeline:
                 metrics_registry.update_metric_kwargs(metric_name, config)
 
     def add_metrics(
-        self, metrics: list[str], configs: dict[str, dict[str, any]] | None = None
+        self, metrics: list[str], configs: dict[str, dict[str, Any]] | None = None
     ) -> None:
         """Add metrics to pipeline.
 
@@ -90,7 +89,7 @@ class MetricPipeline:
             [PerturbationAnndataPair | DEComparison], float | dict[str, float]
         ],
         is_class: bool = False,
-        kwargs: dict[str, any] = None,
+        kwargs: dict[str, Any] | None = None,
     ) -> None:
         """Register a new metric and add it to the pipeline.
 
@@ -204,29 +203,3 @@ class MetricPipeline:
             on="metric",
             values="value",
         )
-
-    def get_summary_stats(self) -> pl.DataFrame:
-        """Get summary statistics for results."""
-        if not self._results:
-            return pl.DataFrame()
-
-        # Group by metric and compute statistics
-        stats = []
-        for name in set(r.name for r in self._results):
-            values = [r.value for r in self._results if r.name == name]
-            if not values:
-                continue
-            stats.append(
-                {
-                    "metric": name,
-                    "mean": float(np.mean(values)),
-                    "std": float(np.std(values)),
-                    "min": float(np.min(values)),
-                    "max": float(np.max(values)),
-                }
-            )
-
-        if not stats:
-            return pl.DataFrame()
-
-        return pl.DataFrame(stats).set_index("metric")
