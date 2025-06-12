@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Protocol
+from typing import Any, Callable, Protocol
 
 from .._types import DEComparison, MetricType, PerturbationAnndataPair
 
@@ -8,7 +8,9 @@ class Metric(Protocol):
     """Protocol for metric functions."""
 
     def __call__(
-        self, data: PerturbationAnndataPair | DEComparison
+        self,
+        data: PerturbationAnndataPair | DEComparison,
+        **kwargs,
     ) -> float | dict[str, float]: ...
 
 
@@ -38,7 +40,7 @@ class MetricInfo:
     func: Callable
     description: str
     is_class: bool = False
-    kwargs: dict[str, any] = None
+    kwargs: dict[str, Any] | None = None
 
     def __post_init__(self):
         if self.kwargs is None:

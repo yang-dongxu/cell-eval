@@ -12,19 +12,12 @@ from ._anndata import (
 from ._de import (
     DEDirectionMatch,
     DENsigCounts,
-    DEOverlapMetric,
     DESigGenesRecall,
     DESpearmanLFC,
     DESpearmanSignificant,
-    PrecisionAt50,
-    PrecisionAt100,
-    PrecisionAt200,
-    Top50Overlap,
-    Top100Overlap,
-    Top200Overlap,
-    TopNOverlap,
     compute_pr_auc,
     compute_roc_auc,
+    de_overlap_metric,
 )
 from ._impl import metrics_registry
 from .base import Metric, MetricInfo, MetricResult
@@ -40,16 +33,9 @@ __all__ = [
     "discrimination_score",
     # DE metrics
     "DEDirectionMatch",
-    "DEOverlapMetric",
     "DESpearmanSignificant",
-    "Top50Overlap",
-    "Top100Overlap",
-    "Top200Overlap",
+    "de_overlap_metric",
     "DESpearmanLFC",
-    "TopNOverlap",
-    "PrecisionAt50",
-    "PrecisionAt100",
-    "PrecisionAt200",
     "compute_pr_auc",
     "compute_roc_auc",
     "DESigGenesRecall",
