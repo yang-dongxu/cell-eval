@@ -208,6 +208,12 @@ def test_eval_simple_profiles():
             break_on_error=True,
         )
 
+    with pytest.raises(ValueError):
+        evaluator.compute(
+            profile="unknown",
+            break_on_error=True,
+        )
+
 
 def test_eval_missing_celltype_col():
     adata_real = build_random_anndata()
