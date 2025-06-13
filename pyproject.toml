@@ -1,6 +1,6 @@
 [project]
 name = "cell-eval"
-version = "0.5.18"
+version = "0.5.19"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
 authors = [
@@ -12,7 +12,7 @@ requires-python = ">=3.10,<3.13"
 dependencies = [
     "adjustpy>=0.1.1",
     "igraph>=0.11.8",
-    "pdex>=0.1.15",
+    "pdex>=0.1.18",
     "polars>=1.30.0",
     "pyyaml>=6.0.2",
     "scanpy>=1.10.3",
