@@ -45,6 +45,7 @@ class MetricPipeline:
         self._results: list[MetricResult] = []
         self._metric_configs = metric_configs or {}
         self._break_on_error = break_on_error
+        self._results_df = None
 
         match profile:
             case "full":
@@ -204,10 +205,18 @@ class MetricPipeline:
 
     def get_results(self) -> pl.DataFrame:
         """Get results as a DataFrame."""
-        if not self._results:
-            return pl.DataFrame()
-        return pl.DataFrame([r.to_dict() for r in self._results]).pivot(
-            index="perturbation",
-            on="metric",
-            values="value",
-        )
+        if self._results_df is None:
+            self._results_df = (
+                pl.DataFrame()
+                if not self._results
+                else pl.DataFrame([r.to_dict() for r in self._results]).pivot(
+                    index="perturbation",
+                    on="metric",
+                    values="value",
+                )
+            )
+        return self._results_df
+
+    def get_agg_results(self) -> pl.DataFrame:
+        """Get aggregated results as a DataFrame."""
+        return self.get_results().drop("perturbation").describe()
