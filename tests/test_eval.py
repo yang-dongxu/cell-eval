@@ -193,6 +193,28 @@ def test_eval_simple():
     )
 
 
+def test_eval_simple_profiles():
+    adata_real = build_random_anndata()
+    adata_pred = downsample_cells(adata_real, fraction=0.5)
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        control_pert="control",
+        pert_col="perturbation",
+    )
+    for profile in ["full", "vcc", "minimal", "de", "anndata"]:
+        evaluator.compute(
+            profile=profile,
+            break_on_error=True,
+        )
+
+    with pytest.raises(ValueError):
+        evaluator.compute(
+            profile="unknown",
+            break_on_error=True,
+        )
+
+
 def test_eval_missing_celltype_col():
     adata_real = build_random_anndata()
     adata_pred = downsample_cells(adata_real, fraction=0.5)
