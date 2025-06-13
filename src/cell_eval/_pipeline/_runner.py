@@ -18,13 +18,19 @@ MINIMAL_METRICS = [
     "de_nsig_counts",
 ]
 
+VCC_METRICS = [
+    "mae",
+    "discrimination_score_l1",
+    "overlap_at_N",
+]
+
 
 class MetricPipeline:
     """Pipeline for computing metrics."""
 
     def __init__(
         self,
-        profile: Literal["full", "minimal", "de", "anndata"] | None = "full",
+        profile: Literal["full", "minimal", "vcc", "de", "anndata"] | None = "full",
         metric_configs: dict[str, dict[str, Any]] | None = None,
         break_on_error: bool = False,
     ) -> None:
@@ -54,6 +60,8 @@ class MetricPipeline:
                 )
             case "minimal":
                 self._metrics.extend(MINIMAL_METRICS)
+            case "vcc":
+                self._metrics.extend(VCC_METRICS)
             case None:
                 pass
             case _:
