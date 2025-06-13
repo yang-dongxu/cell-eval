@@ -109,7 +109,7 @@ class MetricsEvaluator:
         basename: str = "results.csv",
         write_csv: bool = True,
         break_on_error: bool = False,
-    ) -> pl.DataFrame:
+    ) -> (pl.DataFrame, pl.DataFrame):
         pipeline = MetricPipeline(
             profile=profile,
             metric_configs=metric_configs,
@@ -120,6 +120,7 @@ class MetricsEvaluator:
         pipeline.compute_de_metrics(self.de_comparison)
         pipeline.compute_anndata_metrics(self.anndata_pair)
         results = pipeline.get_results()
+        agg_results = pipeline.get_agg_results()
 
         if write_csv:
             results.write_csv(
@@ -128,7 +129,15 @@ class MetricsEvaluator:
                     f"{self.prefix}_{basename}" if self.prefix else basename,
                 )
             )
-        return results
+            agg_results.write_csv(
+                os.path.join(
+                    self.outdir,
+                    f"{self.prefix}_agg_{basename}"
+                    if self.prefix
+                    else f"agg_{basename}",
+                )
+            )
+        return results, agg_results
 
 
 def _build_anndata_pair(
