@@ -163,12 +163,12 @@ def run_evaluation(args: ap.Namespace):
                 allow_discrete=args.allow_discrete,
                 prefix=ct,
             )
-            results = evaluator.compute(
+            evaluator.compute(
                 profile=args.profile,
                 metric_configs=metric_kwargs,
                 skip_metrics=skip_metrics,
+                basename=f"{ct}_results.csv",
             )
-            results.write_csv(os.path.join(args.outdir, f"{ct}_results.csv"))
 
     else:
         evaluator = MetricsEvaluator(
@@ -184,9 +184,9 @@ def run_evaluation(args: ap.Namespace):
             outdir=args.outdir,
             allow_discrete=args.allow_discrete,
         )
-        results = evaluator.compute(
+        evaluator.compute(
             profile=args.profile,
             metric_configs=metric_kwargs,
             skip_metrics=skip_metrics,
+            basename="results.csv",
         )
-        results.write_csv(os.path.join(args.outdir, "results.csv"))
