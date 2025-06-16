@@ -123,20 +123,21 @@ class MetricsEvaluator:
         agg_results = pipeline.get_agg_results()
 
         if write_csv:
-            results.write_csv(
-                os.path.join(
-                    self.outdir,
-                    f"{self.prefix}_{basename}" if self.prefix else basename,
-                )
+            outpath = os.path.join(
+                self.outdir,
+                f"{self.prefix}_{basename}" if self.prefix else basename,
             )
-            agg_results.write_csv(
-                os.path.join(
-                    self.outdir,
-                    f"{self.prefix}_agg_{basename}"
-                    if self.prefix
-                    else f"agg_{basename}",
-                )
+            agg_outpath = os.path.join(
+                self.outdir,
+                f"{self.prefix}_agg_{basename}" if self.prefix else f"agg_{basename}",
             )
+
+            logger.info(f"Writing perturbation level metrics to {outpath}")
+            results.write_csv(outpath)
+
+            logger.info(f"Writing aggregate metrics to {agg_outpath}")
+            agg_results.write_csv(agg_outpath)
+
         return results, agg_results
 
 
