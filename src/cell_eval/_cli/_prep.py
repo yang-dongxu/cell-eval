@@ -70,18 +70,17 @@ def strip_anndata(
     if encoding not in VALID_ENCODINGS:
         raise ValueError(f"Encoding must be in {VALID_ENCODINGS}")
 
+    dtype = np.dtype(np.float64)  # force bound
     match encoding:
         case 64:
             dtype = np.dtype(np.float64)
         case 32:
             dtype = np.dtype(np.float32)
-        case 16:
-            dtype = np.dtype(np.float16)
 
     new_x = (
-        adata.X.astype(dtype)
+        adata.X.astype(dtype)  # type: ignore
         if issparse(adata.X)
-        else csr_matrix(adata.X.astype(dtype))
+        else csr_matrix(adata.X.astype(dtype))  # type: ignore
     )
     new_obs = pd.DataFrame(
         {"target_name": adata.obs[pert_col].values},
