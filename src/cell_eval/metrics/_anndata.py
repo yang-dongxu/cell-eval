@@ -25,7 +25,12 @@ def pearson_delta(
     data: PerturbationAnndataPair, embed_key: str | None = None
 ) -> dict[str, float]:
     """Compute Pearson correlation between mean differences from control."""
-    return _generic_evaluation(data, pearsonr, use_delta=True, embed_key=embed_key)
+    return _generic_evaluation(
+        data,
+        pearsonr,  # type: ignore
+        use_delta=True,
+        embed_key=embed_key,
+    )
 
 
 def mse(
@@ -216,6 +221,7 @@ def _generic_evaluation(
     return res
 
 
+# TODO: clean up this implementation
 class ClusteringAgreement:
     """Compute clustering agreement between real and predicted perturbation centroids."""
 
@@ -276,24 +282,24 @@ class ClusteringAgreement:
         embed_key: str | None = None,
     ) -> ad.AnnData:
         # Isolate the features
-        feats = adata.obsm.get(embed_key, adata.X)
+        feats = adata.obsm.get(embed_key, adata.X)  # type: ignore
 
         # Convert to float if not already
-        if feats.dtype != np.dtype("float64"):
-            feats = feats.astype(np.float64)
+        if feats.dtype != np.dtype("float64"):  # type: ignore
+            feats = feats.astype(np.float64)  # type: ignore
 
         # Densify if required
         if issparse(feats):
-            feats = feats.toarray()
+            feats = feats.toarray()  # type: ignore
 
         cats = adata.obs[category_key].values
-        uniq, inv = np.unique(cats, return_inverse=True)
-        centroids = np.zeros((uniq.size, feats.shape[1]), dtype=feats.dtype)
+        uniq, inv = np.unique(cats, return_inverse=True)  # type: ignore
+        centroids = np.zeros((uniq.size, feats.shape[1]), dtype=feats.dtype)  # type: ignore
 
         for i, cat in enumerate(uniq):
             mask = cats == cat
             if np.any(mask):
-                centroids[i] = feats[mask].mean(axis=0)
+                centroids[i] = feats[mask].mean(axis=0)  # type: ignore
 
         adc = ad.AnnData(X=centroids)
         adc.obs[category_key] = uniq
@@ -331,7 +337,7 @@ class ClusteringAgreement:
             pred_key = f"pred_clusters_{r}"
             self._cluster_leiden(ad_pred_cent, r, pred_key, self.n_neighbors)
             pred_labels = pd.Categorical(ad_pred_cent.obs[pred_key])
-            score = self._score(real_labels, pred_labels, self.metric)
+            score = self._score(real_labels, pred_labels, self.metric)  # type: ignore
             best_score = max(best_score, score)
 
         return float(best_score)

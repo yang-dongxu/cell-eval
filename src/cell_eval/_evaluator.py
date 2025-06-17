@@ -173,9 +173,9 @@ def _validate_normlog(
         top_n = min(x.shape[0], n_cells)
         rowsum = x[:top_n].sum(axis=1)
         frac, _ = np.modf(rowsum)
-        return np.all(frac == 0)
+        return bool(np.all(frac == 0))
 
-    if suspected_discrete(adata.X, n_cells):
+    if suspected_discrete(adata.X, n_cells):  # type: ignore
         if allow_discrete:
             logger.warning(
                 "Error: adata appears not to be log-transformed. We expect normed+logged input"
