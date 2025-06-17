@@ -214,6 +214,21 @@ class PerturbationAnndataPair:
         for pert in tqdm(self.perts, desc="Iterating over perturbations..."):
             yield self.build_cell_array(pert, embed_key=embed_key)
 
+    def ctrl_matrix(
+        self, which: Literal["real", "pred"], embed_key: str | None = None
+    ) -> np.ndarray:
+        """Build a CellArrays object for the control perturbation."""
+        if not embed_key:
+            matrix = self.real.X if which == "real" else self.pred.X
+        else:
+            matrix = (
+                self.real.obsm[embed_key]
+                if which == "real"
+                else self.pred.obsm[embed_key]
+            )
+        mask_lookup = self.pert_mask_real if which == "real" else self.pert_mask_pred
+        return matrix[mask_lookup[self.control_pert]]  # type: ignore
+
 
 @dataclass(frozen=True)
 class BulkArrays:

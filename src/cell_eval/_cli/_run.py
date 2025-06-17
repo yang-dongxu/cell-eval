@@ -127,6 +127,7 @@ def run_evaluation(args: ap.Namespace):
         {
             "discrimination_score_l2": {"embed_key": args.embed_key},
             "discrimination_score_cosine": {"embed_key": args.embed_key},
+            "pearson_edistance": {"n_jobs": args.num_threads},
         }
         if args.embed_key is not None
         else {}

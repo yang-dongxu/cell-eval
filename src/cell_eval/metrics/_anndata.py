@@ -1,5 +1,6 @@
 """Array metrics module."""
 
+from logging import getLogger
 from typing import Callable, Literal, Sequence
 
 import anndata as ad
@@ -16,6 +17,8 @@ from sklearn.metrics import (
 )
 
 from .._types import PerturbationAnndataPair
+
+logger = getLogger(__name__)
 
 
 def pearson_delta(
@@ -73,28 +76,47 @@ def edistance(
         x: np.ndarray,
         y: np.ndarray,
         metric: str = "euclidean",
+        precomp_sigma_y: float | None = None,
         **kwargs,
     ) -> float:
         sigma_x = skm.pairwise_distances(x, metric=metric, **kwargs).mean()
-        sigma_y = skm.pairwise_distances(y, metric=metric, **kwargs).mean()
+        sigma_y = (
+            precomp_sigma_y
+            if precomp_sigma_y is not None
+            else skm.pairwise_distances(y, metric=metric, **kwargs).mean()
+        )
         delta = skm.pairwise_distances(x, y, metric=metric, **kwargs).mean()
         return 2 * delta - sigma_x - sigma_y
 
     d_real = np.zeros(data.perts.size)
     d_pred = np.zeros(data.perts.size)
 
+    # Precompute sigma for control data (reused by all perturbations)
+    logger.info("Precomputing sigma for control data (real)")
+    precomp_sigma_real = skm.pairwise_distances(
+        data.ctrl_matrix(which="real", embed_key=embed_key), metric=metric, **kwargs
+    ).mean()
+
+    logger.info("Precomputing sigma for control data (pred)")
+    precomp_sigma_pred = skm.pairwise_distances(
+        data.ctrl_matrix(which="pred", embed_key=embed_key), metric=metric, **kwargs
+    ).mean()
+
     for idx, delta in enumerate(data.iter_cell_arrays(embed_key=embed_key)):
         d_real[idx] = _edistance(
-            delta.pert_real, delta.ctrl_real, metric=metric, **kwargs
+            delta.pert_real,
+            delta.ctrl_real,
+            precomp_sigma_y=precomp_sigma_real,
+            metric=metric,
+            **kwargs,
         )
-        if delta.ctrl_pred is None:
-            d_pred[idx] = _edistance(
-                delta.pert_pred, delta.ctrl_real, metric=metric, **kwargs
-            )
-        else:
-            d_pred[idx] = _edistance(
-                delta.pert_pred, delta.ctrl_pred, metric=metric, **kwargs
-            )
+        d_pred[idx] = _edistance(
+            delta.pert_pred,
+            delta.ctrl_pred,
+            precomp_sigma_y=precomp_sigma_pred,
+            metric=metric,
+            **kwargs,
+        )
 
     return pearsonr(d_real, d_pred).correlation
 
