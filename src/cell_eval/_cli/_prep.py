@@ -39,6 +39,20 @@ def parse_args_prep(parser: ap.ArgumentParser):
         help="Name of the column designated celltype (optional)",
     )
     parser.add_argument(
+        "-P",
+        "--output-pert-col",
+        type=str,
+        default=DEFAULT_PERT_COL_OUTPUT,
+        help="Name of the column designated perturbations in the output",
+    )
+    parser.add_argument(
+        "-C",
+        "--output-celltype-col",
+        type=str,
+        default=DEFAULT_CELLTYPE_COL_OUTPUT,
+        help="Name of the column designated celltype in the output",
+    )
+    parser.add_argument(
         "-e",
         "--encoding",
         type=int,
@@ -58,6 +72,8 @@ def strip_anndata(
     adata: ad.AnnData,
     pert_col: str = "target_name",
     celltype_col: str | None = None,
+    output_pert_col: str = DEFAULT_PERT_COL_OUTPUT,
+    output_celltype_col: str = DEFAULT_CELLTYPE_COL_OUTPUT,
     encoding: int = 64,
 ):
     if pert_col not in adata.obs:
@@ -85,11 +101,11 @@ def strip_anndata(
         else csr_matrix(adata.X.astype(dtype))  # type: ignore
     )
     new_obs = pd.DataFrame(
-        {DEFAULT_PERT_COL_OUTPUT: adata.obs[pert_col].values},
+        {output_pert_col: adata.obs[pert_col].values},
         index=np.arange(adata.shape[0]).astype(str),
     )
     if celltype_col:
-        new_obs[DEFAULT_CELLTYPE_COL_OUTPUT] = adata.obs[celltype_col].values
+        new_obs[output_celltype_col] = adata.obs[celltype_col].values
     new_var = pd.DataFrame(
         index=adata.var.index.values,
     )
