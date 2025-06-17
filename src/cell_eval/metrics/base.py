@@ -25,7 +25,7 @@ class MetricResult:
     def to_dict(self) -> dict[str, float | str]:
         """Convert result to dictionary."""
         return {
-            "perturbation": self.perturbation,
+            "perturbation": self.perturbation,  # type: ignore
             "metric": self.name,
             "value": self.value,
         }

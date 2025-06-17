@@ -53,7 +53,11 @@ class MetricRegistry:
         """
         if name not in self.metrics:
             raise KeyError(f"Metric '{name}' not found in registry")
-        self.metrics[name].kwargs.update(kwargs)
+
+        if self.metrics[name].kwargs is None:
+            self.metrics[name].kwargs = {}
+
+        self.metrics[name].kwargs.update(kwargs)  # type: ignore
 
     def get_metric(self, name: str) -> MetricInfo:
         """Get information about a registered metric."""
@@ -94,7 +98,7 @@ class MetricRegistry:
         """
         metric = self.get_metric(name)
         # Merge stored kwargs with any provided kwargs
-        merged_kwargs = metric.kwargs.copy()
+        merged_kwargs = metric.kwargs.copy()  # type: ignore
         if kwargs:
             merged_kwargs.update(kwargs)
 

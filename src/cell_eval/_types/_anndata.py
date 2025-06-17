@@ -5,6 +5,7 @@ from typing import Iterator, Literal
 import anndata as ad
 import numpy as np
 import polars as pl
+from numpy.typing import NDArray
 from scipy.sparse import issparse
 from tqdm import tqdm
 
@@ -20,16 +21,20 @@ class PerturbationAnndataPair:
     pert_col: str
     control_pert: str
     embed_key: str | None = None
-    perts: np.ndarray[str] = field(init=False)
-    genes: np.ndarray[str] = field(init=False)
+    perts: NDArray[np.str_] = field(init=False)
+    genes: NDArray[np.str_] = field(init=False)
 
     # Masks of indices for each perturbation
     pert_mask_real: dict[str, np.ndarray] = field(init=False)
     pert_mask_pred: dict[str, np.ndarray] = field(init=False)
 
     # Bulk anndata by embedding key and perturbation
-    bulk_real: dict[str, np.ndarray] | None = field(init=False)
-    bulk_pred: dict[str, np.ndarray] | None = field(init=False)
+    bulk_real: dict[str, tuple[NDArray[np.str_], NDArray[np.float64]]] | None = field(
+        init=False
+    )
+    bulk_pred: dict[str, tuple[NDArray[np.str_], NDArray[np.float64]]] | None = field(
+        init=False
+    )
 
     def __post_init__(self) -> None:
         if self.real.shape[1] != self.pred.shape[1]:
@@ -56,12 +61,31 @@ class PerturbationAnndataPair:
             )
         object.__setattr__(self, "genes", var_names_real)
 
+        if self.pert_col not in self.real.obs.columns:
+            raise ValueError(
+                f"Perturbation column ({self.pert_col}) not found in real AnnData: {self.real.obs.columns}"
+            )
+        if self.pert_col not in self.pred.obs.columns:
+            raise ValueError(
+                f"Perturbation column ({self.pert_col}) not found in pred AnnData: {self.pred.obs.columns}"
+            )
+
         perts_real = np.unique(self.real.obs[self.pert_col].to_numpy(str))
         perts_pred = np.unique(self.pred.obs[self.pert_col].to_numpy(str))
         if not np.array_equal(perts_real, perts_pred):
             raise ValueError(
                 f"Perturbation mismatch: real {perts_real} != pred {perts_pred}"
             )
+
+        if self.control_pert not in perts_real:
+            raise ValueError(
+                f"Control perturbation ({self.control_pert}) not found in real AnnData: {perts_real}"
+            )
+        if self.control_pert not in perts_pred:
+            raise ValueError(
+                f"Control perturbation ({self.control_pert}) not found in pred AnnData: {perts_pred}"
+            )
+
         perts = np.union1d(perts_real, perts_pred)
         perts = np.array([p for p in perts if p != self.control_pert])
 
@@ -85,7 +109,7 @@ class PerturbationAnndataPair:
         adata: ad.AnnData,
         groupby_key: str,
         embed_key: str | None = None,
-    ) -> tuple[np.ndarray[str], np.ndarray]:
+    ) -> tuple[NDArray[np.str_], NDArray[np.float64]]:
         """Get bulk anndata for a groupby key."""
 
         matrix = adata.X if not embed_key else adata.obsm[embed_key]
@@ -113,11 +137,11 @@ class PerturbationAnndataPair:
         return (keys, values)
 
     @staticmethod
-    def pert_mask(perts: np.ndarray[str]) -> dict[str, np.ndarray[int]]:
+    def pert_mask(perts: NDArray[np.str_]) -> dict[str, NDArray[np.int_]]:
         unique_perts, inverse = np.unique(perts, return_inverse=True)
         return {pert: np.where(inverse == i)[0] for i, pert in enumerate(unique_perts)}
 
-    def get_perts(self, include_control: bool = False) -> np.ndarray[str]:
+    def get_perts(self, include_control: bool = False) -> NDArray[np.str_]:
         """Get all perturbations."""
         if include_control:
             return self.perts
@@ -128,6 +152,7 @@ class PerturbationAnndataPair:
         if embed_key is None:
             embed_key = "_default"
         rebuilt = False
+        assert self.bulk_real is not None
         if embed_key not in self.bulk_real:
             logger.info(
                 "Building pseudobulk embeddings for real anndata on: {}".format(
@@ -140,6 +165,8 @@ class PerturbationAnndataPair:
                 embed_key=embed_key if embed_key != "_default" else None,
             )
             rebuilt = True
+
+        assert self.bulk_pred is not None
         if embed_key not in self.bulk_pred:
             logger.info(
                 "Building pseudobulk embeddings for predicted anndata on: {}".format(
