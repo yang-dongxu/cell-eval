@@ -51,7 +51,7 @@ def parse_args_baseline(parser: ap.ArgumentParser):
 
 
 def run_baseline(args: ap.Namespace):
-    from .._baseline import build_base_mean_adata
+    from .. import build_base_mean_adata
 
     build_base_mean_adata(
         adata=args.adata,

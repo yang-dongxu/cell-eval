@@ -1,3 +1,4 @@
+from ._baseline import build_base_mean_adata
 from ._evaluator import MetricsEvaluator
 from ._pipeline import MetricPipeline
 from ._types import (
@@ -13,7 +14,10 @@ from ._types import (
 from .metrics import metrics_registry
 
 __all__ = [
+    # Evaluation
     "MetricsEvaluator",
+    # Baseline
+    "build_base_mean_adata",
     # Types
     "DEComparison",
     "DEResults",
