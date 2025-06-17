@@ -7,6 +7,8 @@ import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
 VALID_ENCODINGS = [64, 32]
+DEFAULT_PERT_COL_OUTPUT = "target_gene"
+DEFAULT_CELLTYPE_COL_OUTPUT = "celltype"
 
 
 def parse_args_prep(parser: ap.ArgumentParser):
@@ -83,11 +85,11 @@ def strip_anndata(
         else csr_matrix(adata.X.astype(dtype))  # type: ignore
     )
     new_obs = pd.DataFrame(
-        {"target_name": adata.obs[pert_col].values},
+        {DEFAULT_PERT_COL_OUTPUT: adata.obs[pert_col].values},
         index=np.arange(adata.shape[0]).astype(str),
     )
     if celltype_col:
-        new_obs["celltype"] = adata.obs[celltype_col].values
+        new_obs[DEFAULT_CELLTYPE_COL_OUTPUT] = adata.obs[celltype_col].values
     new_var = pd.DataFrame(
         index=adata.var.index.values,
     )
