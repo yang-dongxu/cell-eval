@@ -1,10 +1,13 @@
 import argparse as ap
 import importlib.metadata
+import logging
 
 import anndata as ad
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix, issparse
+
+logger = logging.getLogger(__name__)
 
 VALID_ENCODINGS = [64, 32]
 DEFAULT_PERT_COL_OUTPUT = "target_gene"
@@ -91,34 +94,47 @@ def strip_anndata(
     dtype = np.dtype(np.float64)  # force bound
     match encoding:
         case 64:
+            logger.info("Using 64-bit float encoding")
             dtype = np.dtype(np.float64)
         case 32:
+            logger.info("Using 32-bit float encoding")
             dtype = np.dtype(np.float32)
 
+    logger.info("Setting data to sparse if not already")
     new_x = (
         adata.X.astype(dtype)  # type: ignore
         if issparse(adata.X)
         else csr_matrix(adata.X.astype(dtype))  # type: ignore
     )
+
+    logger.info("Simplifying obs dataframe")
     new_obs = pd.DataFrame(
         {output_pert_col: adata.obs[pert_col].values},
         index=np.arange(adata.shape[0]).astype(str),
     )
     if celltype_col:
         new_obs[output_celltype_col] = adata.obs[celltype_col].values
+
+    logger.info("Simplifying var dataframe")
     new_var = pd.DataFrame(
         index=adata.var.index.values,
     )
+
+    logger.info("Creating final minimal AnnData object")
     minimal = ad.AnnData(
         X=new_x,
         obs=new_obs,
         var=new_var,
     )
+
     return minimal
 
 
 def run_prep(args: ap.Namespace):
-    adata = ad.read(args.input)
+    logger.info("Reading input anndata")
+    adata = ad.read_h5ad(args.input)
+
+    logger.info("Preparing anndata")
     minimal = strip_anndata(
         adata,
         pert_col=args.pert_col,
@@ -129,7 +145,9 @@ def run_prep(args: ap.Namespace):
     del adata
 
     # write output
+    outpath = args.output if args.output else args.input.replace(".h5ad", ".prep.h5ad")
+    logger.info(f"Writing output to {outpath}")
     minimal.write_h5ad(
-        args.output if args.output else args.input.replace(".h5ad", ".prep.h5ad"),
+        outpath,
         compression="gzip",
     )
