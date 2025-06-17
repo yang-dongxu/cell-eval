@@ -109,7 +109,7 @@ class MetricsEvaluator:
         basename: str = "results.csv",
         write_csv: bool = True,
         break_on_error: bool = False,
-    ) -> (pl.DataFrame, pl.DataFrame):
+    ) -> tuple[pl.DataFrame, pl.DataFrame]:
         pipeline = MetricPipeline(
             profile=profile,
             metric_configs=metric_configs,
