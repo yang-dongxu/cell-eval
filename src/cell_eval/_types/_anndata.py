@@ -29,8 +29,12 @@ class PerturbationAnndataPair:
     pert_mask_pred: dict[str, np.ndarray] = field(init=False)
 
     # Bulk anndata by embedding key and perturbation
-    bulk_real: dict[str, np.ndarray] | None = field(init=False)
-    bulk_pred: dict[str, np.ndarray] | None = field(init=False)
+    bulk_real: dict[str, tuple[NDArray[np.str_], NDArray[np.float64]]] | None = field(
+        init=False
+    )
+    bulk_pred: dict[str, tuple[NDArray[np.str_], NDArray[np.float64]]] | None = field(
+        init=False
+    )
 
     def __post_init__(self) -> None:
         if self.real.shape[1] != self.pred.shape[1]:
@@ -105,7 +109,7 @@ class PerturbationAnndataPair:
         adata: ad.AnnData,
         groupby_key: str,
         embed_key: str | None = None,
-    ) -> tuple[np.ndarray[str], np.ndarray]:
+    ) -> tuple[NDArray[np.str_], NDArray[np.float64]]:
         """Get bulk anndata for a groupby key."""
 
         matrix = adata.X if not embed_key else adata.obsm[embed_key]
@@ -133,11 +137,11 @@ class PerturbationAnndataPair:
         return (keys, values)
 
     @staticmethod
-    def pert_mask(perts: np.ndarray[str]) -> dict[str, np.ndarray[int]]:
+    def pert_mask(perts: NDArray[np.str_]) -> dict[str, NDArray[np.int_]]:
         unique_perts, inverse = np.unique(perts, return_inverse=True)
         return {pert: np.where(inverse == i)[0] for i, pert in enumerate(unique_perts)}
 
-    def get_perts(self, include_control: bool = False) -> np.ndarray[str]:
+    def get_perts(self, include_control: bool = False) -> NDArray[np.str_]:
         """Get all perturbations."""
         if include_control:
             return self.perts
@@ -148,6 +152,7 @@ class PerturbationAnndataPair:
         if embed_key is None:
             embed_key = "_default"
         rebuilt = False
+        assert self.bulk_real is not None
         if embed_key not in self.bulk_real:
             logger.info(
                 "Building pseudobulk embeddings for real anndata on: {}".format(
@@ -160,6 +165,8 @@ class PerturbationAnndataPair:
                 embed_key=embed_key if embed_key != "_default" else None,
             )
             rebuilt = True
+
+        assert self.bulk_pred is not None
         if embed_key not in self.bulk_pred:
             logger.info(
                 "Building pseudobulk embeddings for predicted anndata on: {}".format(
