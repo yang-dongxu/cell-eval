@@ -23,19 +23,6 @@ KNOWN_PROFILES: list[Literal["full", "vcc", "minimal", "de", "anndata"]] = [
 ]
 
 
-def test_missing_adata_input_vars():
-    adata_real = build_random_anndata(normlog=False)
-
-    with pytest.raises(Exception):
-        MetricsEvaluator(
-            adata_pred=adata_real,
-            adata_real=adata_real,
-            control_pert=CONTROL_VAR,
-            pert_col=PERT_COL,
-            outdir=OUTDIR,
-        )
-
-
 def test_broken_adata_mismatched_var_size():
     adata_real = build_random_anndata(normlog=False)
     adata_pred = adata_real.copy()
@@ -76,28 +63,31 @@ def test_broken_adata_mismatched_var_ordering():
 def test_broken_adata_not_normlog():
     adata_real = build_random_anndata(normlog=False)
     adata_pred = adata_real.copy()
-
-    with pytest.raises(Exception):
-        evaluator = MetricsEvaluator(
-            adata_pred=adata_pred,
-            adata_real=adata_real,
-            control_pert=CONTROL_VAR,
-            pert_col=PERT_COL,
-            outdir=OUTDIR,
-        )
-        evaluator.compute()
+    evaluator = MetricsEvaluator(
+        adata_pred=adata_pred,
+        adata_real=adata_real,
+        control_pert=CONTROL_VAR,
+        pert_col=PERT_COL,
+        outdir=OUTDIR,
+    )
+    evaluator.compute(
+        break_on_error=True,
+    )
 
 
 def test_broken_adata_not_normlog_skip_check():
     adata_real = build_random_anndata(normlog=False)
     adata_pred = adata_real.copy()
-    MetricsEvaluator(
+    evaluator = MetricsEvaluator(
         adata_pred=adata_pred,
         adata_real=adata_real,
         control_pert=CONTROL_VAR,
         pert_col=PERT_COL,
         outdir=OUTDIR,
         allow_discrete=True,
+    )
+    evaluator.compute(
+        break_on_error=True,
     )
 
 

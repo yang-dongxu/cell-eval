@@ -62,9 +62,9 @@ def parse_args_baseline(parser: ap.ArgumentParser):
         help="Number of threads to use",
     )
     parser.add_argument(
-        "--is-counts",
+        "--allow-discrete",
         action="store_true",
-        help="Whether the input data is counts (not log1p)",
+        help="Bypass log normalization in case we incorrectly guess the data is discrete",
     )
     parser.add_argument(
         "--skip-de",
@@ -85,7 +85,7 @@ def run_baseline(args: ap.Namespace):
 
     pdex_kwargs = {
         "clip_value": 2**20,
-        "is_log1p": not args.is_counts,
+        "is_log1p": True,  # Enforces log normalization internally
     }
     build_base_mean_adata(
         adata=args.adata,
@@ -96,5 +96,6 @@ def run_baseline(args: ap.Namespace):
         output_path=args.output_path,
         output_de_path=args.output_de_path if not args.skip_de else None,
         num_threads=args.num_threads,
+        allow_discrete=args.allow_discrete,
         pdex_kwargs=pdex_kwargs,
     )

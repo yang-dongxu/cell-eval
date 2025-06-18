@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from pdex import parallel_differential_expression
 from scipy.sparse import issparse
 
-from ._evaluator import _build_pdex_kwargs
+from ._evaluator import _build_pdex_kwargs, _convert_to_normlog
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,7 @@ def build_base_mean_adata(
     control_pert: str = "non-targeting",
     counts_col: str = "n_cells",
     as_delta: bool = False,
+    allow_discrete: bool = False,
     output_path: str | None = None,
     output_de_path: str | None = None,
     batch_size: int = 1000,
@@ -30,6 +31,9 @@ def build_base_mean_adata(
     if isinstance(adata, str):
         logger.info(f"Reading adata from path: {adata}")
         adata = ad.read_h5ad(adata)
+
+    # Convert to normalized log space if necessary
+    _convert_to_normlog(adata=adata, allow_discrete=allow_discrete)
 
     counts = (
         _load_counts_df(
@@ -47,7 +51,7 @@ def build_base_mean_adata(
         )
     )
     baseline = _build_pert_baseline(
-        adata=adata, pert_col=pert_col, control_pert=control_pert
+        adata=adata, pert_col=pert_col, control_pert=control_pert, as_delta=as_delta
     )
 
     obs = (
