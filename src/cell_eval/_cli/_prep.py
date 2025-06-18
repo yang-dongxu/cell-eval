@@ -7,6 +7,8 @@ import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
+from .._evaluator import _convert_to_normlog
+
 logger = logging.getLogger(__name__)
 
 VALID_ENCODINGS = [64, 32]
@@ -63,6 +65,11 @@ def parse_args_prep(parser: ap.ArgumentParser):
         default=32,
     )
     parser.add_argument(
+        "--allow-discrete",
+        action="store_true",
+        help="Bypass log normalization in case we incorrectly guess the data is discrete",
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version="%(prog)s {version}".format(
@@ -78,6 +85,7 @@ def strip_anndata(
     output_pert_col: str = DEFAULT_PERT_COL_OUTPUT,
     output_celltype_col: str = DEFAULT_CELLTYPE_COL_OUTPUT,
     encoding: int = 64,
+    allow_discrete: bool = False,
 ):
     if pert_col not in adata.obs:
         raise ValueError(
@@ -127,6 +135,9 @@ def strip_anndata(
         var=new_var,
     )
 
+    logger.info("Applying normlog transformation if required")
+    _convert_to_normlog(minimal, allow_discrete=allow_discrete)
+
     return minimal
 
 
@@ -140,6 +151,7 @@ def run_prep(args: ap.Namespace):
         pert_col=args.pert_col,
         celltype_col=args.celltype_col,
         encoding=args.encoding,
+        allow_discrete=args.allow_discrete,
     )
     # drop adata from memory
     del adata
