@@ -26,7 +26,10 @@ def build_base_mean_adata(
     de_method: str = "wilcoxon",
     pdex_kwargs: dict[str, Any] = {},
 ) -> ad.AnnData:
-    adata = ad.read_h5ad(adata) if isinstance(adata, str) else adata
+    if isinstance(adata, str):
+        logger.info(f"Reading adata from path: {adata}")
+        adata = ad.read_h5ad(adata)
+
     counts = (
         _load_counts_df(
             counts_df=counts_df,
