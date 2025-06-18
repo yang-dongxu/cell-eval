@@ -99,7 +99,7 @@ metrics_registry.register(
     metric_type=MetricType.DE,
     description="Spearman correlation on number of significant DE genes",
     best_value=MetricBestValue.ONE,
-    func=DESpearmanSignificant,
+    func=DESpearmanSignificant,  # type: ignore
     is_class=True,
 )
 
@@ -108,7 +108,7 @@ metrics_registry.register(
     metric_type=MetricType.DE,
     description="Agreement in direction of DE gene changes",
     best_value=MetricBestValue.ONE,
-    func=DEDirectionMatch,
+    func=DEDirectionMatch,  # type: ignore
     is_class=True,
 )
 
@@ -117,7 +117,7 @@ metrics_registry.register(
     metric_type=MetricType.DE,
     description="Spearman correlation on log fold changes of significant genes",
     best_value=MetricBestValue.ONE,
-    func=DESpearmanLFC,
+    func=DESpearmanLFC,  # type: ignore
     is_class=True,
 )
 
@@ -126,7 +126,7 @@ metrics_registry.register(
     metric_type=MetricType.DE,
     description="Recall of significant genes",
     best_value=MetricBestValue.ONE,
-    func=DESigGenesRecall,
+    func=DESigGenesRecall,  # type: ignore
     is_class=True,
 )
 
@@ -135,7 +135,7 @@ metrics_registry.register(
     metric_type=MetricType.DE,
     description="Counts of significant genes",
     best_value=MetricBestValue.NONE,
-    func=DENsigCounts,
+    func=DENsigCounts,  # type: ignore
     is_class=True,
 )
 
@@ -160,6 +160,6 @@ metrics_registry.register(
     metric_type=MetricType.ANNDATA_PAIR,
     description="Clustering agreement between real and predicted perturbation centroids",
     best_value=MetricBestValue.ONE,
-    func=ClusteringAgreement,
+    func=ClusteringAgreement,  # type: ignore
     is_class=True,
 )
