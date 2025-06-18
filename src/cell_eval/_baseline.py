@@ -1,9 +1,13 @@
 import logging
+from typing import Any
 
 import anndata as ad
 import numpy as np
 import polars as pl
 from numpy.typing import NDArray
+from pdex import parallel_differential_expression
+
+from ._evaluator import _build_pdex_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +19,11 @@ def build_base_mean_adata(
     control_pert: str = "non-targeting",
     as_delta: bool = False,
     output_path: str | None = None,
+    output_de_path: str | None = None,
+    batch_size: int = 1000,
+    num_threads: int = 1,
+    de_method: str = "wilcoxon",
+    pdex_kwargs: dict[str, Any] = {},
 ) -> ad.AnnData:
     adata = ad.read_h5ad(adata) if isinstance(adata, str) else adata
     counts = (
@@ -55,6 +64,23 @@ def build_base_mean_adata(
     if output_path is not None:
         logger.info(f"Saving baseline data to {output_path}")
         baseline_adata.write_h5ad(output_path)
+
+    if output_de_path is not None:
+        logger.info("Calculating differential expression")
+        pdex_kwargs = _build_pdex_kwargs(
+            groupby_key=pert_col,
+            reference=control_pert,
+            num_workers=num_threads,
+            metric=de_method,
+            batch_size=batch_size,
+            pdex_kwargs=pdex_kwargs,
+        )
+        frame = parallel_differential_expression(
+            adata=baseline_adata,
+            **pdex_kwargs,
+        )
+        logger.info(f"Saving differential expression results to {output_de_path}")
+        frame.write_csv(output_de_path)
 
     return baseline_adata
 
