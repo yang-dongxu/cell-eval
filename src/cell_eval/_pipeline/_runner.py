@@ -3,7 +3,7 @@ from typing import Any, Callable, Literal
 
 import polars as pl
 
-from .._types import DEComparison, MetricType, PerturbationAnndataPair
+from .._types import DEComparison, MetricBestValue, MetricType, PerturbationAnndataPair
 from ..metrics import MetricResult, metrics_registry
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,7 @@ class MetricPipeline:
         func: Callable[
             [PerturbationAnndataPair | DEComparison], float | dict[str, float]
         ],
+        best_value: MetricBestValue,
         is_class: bool = False,
         kwargs: dict[str, Any] | None = None,
     ) -> None:
@@ -122,6 +123,7 @@ class MetricPipeline:
             description=description,
             func=func,
             is_class=is_class,
+            best_value=best_value,
             kwargs=kwargs,
         )
         # Add it to the pipeline's metrics list
