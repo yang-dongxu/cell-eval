@@ -30,14 +30,14 @@ def build_random_anndata(
     random_state: int = RANDOM_SEED,
     as_sparse: bool = False,
     normlog: bool = True,
-    normtotal: int = NORM_TOTAL,
+    normtotal: int | float = NORM_TOTAL,
 ) -> ad.AnnData:
     """Sample a random AnnData object."""
     if random_state is not None:
         np.random.seed(random_state)
 
     # Randomly sample a matrix
-    matrix = np.random.randint(0, MAX_UMI, size=(n_cells, n_genes))
+    matrix = np.random.randint(0, int(MAX_UMI), size=(n_cells, n_genes))
 
     # Normalize and log transform if required
     if normlog:
