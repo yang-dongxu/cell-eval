@@ -1,51 +1,66 @@
 # cell-eval
 
-Set config parameters in `eval_config.yaml`
-
 ## Description
 
-This package provides evaluation metrics for single-cell perturbation predictions.
-
-Differential expression analysis (parallel wilcoxon rank sum) is performed using [`pdex`](https://github.com/arcinstitute/pdex).
+This package provides evaluation metrics for single-cell perturbation predictions that can be used to assess the accuracy of predictions.
+It is meant to be used either as a command-line tool or as a Python module.
 
 ## Installation
 
 Distribution with [`uv`](https://docs.astral.sh/uv/)
 
 ```bash
-# install from github directly
-uv pip install git+ssh://github.com/arcinstitute/cell-eval
+# install from pypi
+uv pip install -U cell-eval
 
-# install from source
-git clone ssh://github.com/arcinstitute/cell-eval
-cd cell-eval
-uv pip install -e .
+# install from github directly
+uv pip install -U git+ssh://github.com/arcinstitute/cell-eval
 
 # install cli with uv tool
-uv tool install git+ssh://github.com/arcinstitute/cell-eval
+uv tool install -U git+ssh://github.com/arcinstitute/cell-eval
+
+# Check installation
 cell-eval --help
 ```
 
 ## Usage
 
-### CLI Usage
+To get started you'll need to have two anndata files.
 
-You can run evaluation between two anndatas on the CLI
+1. a predicted anndata (`adata_pred`).
+2. a real anndata to compare against (`adata_real`).
+
+### Prep
+
+To prepare an anndata for evaluation you can use the `cell-eval prep` command.
+This will strip the anndata to bare essentials, compress it, adjust naming conventions, and ensure compatibility with the evaluation framework.
+
+This step is optional for downstream usage, but recommended for optimal performance and compatibility.
+
+Run this on both the predicted and real anndata files:
 
 ```bash
-# prepare for processing / strip anndata to bare essentials + compression
-cell-eval prep -i <your/path/to/pred>.h5ad
-cell-eval prep -i <your/path/to/real>.h5ad
-
-# run evaluation
-cell-eval run \
-    -ap <your/path/to/pred>.h5ad \
-    -ar <your/path/to/real>.h5ad
+cell-eval prep -i <your/path/to>.h5ad -o prep.h5ad --pert-col <YOUR_PERTURBATION_COLUMN>
 ```
 
-### Module Usage
+### Run
 
-You can access evaluation programmatically using the `cell_eval` module.
+To run an evaluation between two anndatas you can use the `cell-eval run` command.
+
+This will run [differential expression](https://github.com/arcinstitute/pdex) for each anndata and then run a suite of
+evaluation metrics to compare the two (select your suite of metrics with the `--profile` flag).
+
+To save time you can submit precomputed differential expression results, see the `cell-eval run --help` menu for more information.
+
+```bash
+cell-eval run \
+    -ap <your/path/to/pred>.h5ad \
+    -ar <your/path/to/real>.h5ad \
+    --num-threads 64 \
+    --profile full
+```
+
+To run this as a python module you will need to use the `MetricsEvaluator` class.
 
 ```python
 from cell_eval import MetricsEvaluator
@@ -58,6 +73,47 @@ evaluator = MetricsEvaluator(
     adata_real=adata_real,
     control_pert="control",
     pert_col="perturbation",
+    num_threads=64,
 )
-evaluator.compute()
+(results, agg_results) = evaluator.compute()
 ```
+
+This will give you metric evaluations for each perturbation individually (`results`) and aggregated results over all perturbations (`agg_results`).
+
+### Score
+
+To normalize your scores against a baseline you can run the `cell-eval score` command.
+
+This accepts two `agg_results.csv` (or `agg_results` objects in python) as input.
+
+```bash
+cell-eval score \
+    --user-input <your/path/to/user>/agg_results.csv \
+    --base-input <your/path/to/base>/agg_results.csv
+```
+
+Or from python:
+
+```python
+from cell_eval import score_agg_metrics
+
+user_input = "./cell-eval-user/agg_results.csv"
+base_input = "./cell-eval-base/agg_results.csv"
+output_path = "./score.csv"
+
+score_agg_metrics(
+    results_user=user_input,
+    results_base=base_input,
+    output=output_path,
+)
+```
+
+## Library Design
+
+The metrics are built using the python registry pattern. This allows for easy extension for new metrics with a well-typed interface.
+
+Take a look at existing metrics in `cell_eval.metrics` to get started.
+
+## Development
+
+This work is open-source and welcomes contributions. Feel free to submit a pull request or open an issue.
