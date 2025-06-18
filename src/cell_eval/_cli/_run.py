@@ -3,6 +3,9 @@ import importlib.metadata
 import logging
 import os
 
+from .. import KNOWN_PROFILES
+from ._const import DEFAULT_CTRL, DEFAULT_OUTDIR, DEFAULT_PERT_COL
+
 logger = logging.getLogger(__name__)
 
 
@@ -28,27 +31,29 @@ def parse_args_run(parser: ap.ArgumentParser):
         "-dp",
         "--de-pred",
         type=str,
-        help="Path to the predicted DE results (computed with pdex from adata-pred if not provided)",
+        help="Path to the predicted DE results "
+        f"(computed with pdex from adata-pred if not provided and saved to {DEFAULT_OUTDIR}/pred_de.csv)",
         required=False,
     )
     parser.add_argument(
         "-dr",
         "--de-real",
         type=str,
-        help="Path to the real DE results (computed with pdex from adata-real if not provided)",
+        help="Path to the real DE results "
+        f"(computed with pdex from adata-real if not provided and saved to {DEFAULT_OUTDIR}/real_de.csv)",
         required=False,
     )
     parser.add_argument(
         "--control-pert",
         type=str,
-        default="non-targeting",
-        help="Name of the control perturbation",
+        default=DEFAULT_CTRL,
+        help="Name of the control perturbation [default: %(default)s]",
     )
     parser.add_argument(
         "--pert-col",
         type=str,
-        default="target_gene",
-        help="Name of the column designated perturbations",
+        default=DEFAULT_PERT_COL,
+        help="Name of the column designated perturbations [default: %(default)s]",
     )
     parser.add_argument(
         "--celltype-col",
@@ -65,23 +70,26 @@ def parse_args_run(parser: ap.ArgumentParser):
         "-o",
         "--outdir",
         type=str,
-        default="./cell-eval-outdir",
-        help="Output directory to write to",
+        default=DEFAULT_OUTDIR,
+        help="Output directory to write to [default: %(default)s]",
     )
     parser.add_argument(
         "--num-threads",
         type=int,
         default=1,
+        help="Number of threads to use for parallel processing [default: %(default)s]",
     )
     parser.add_argument(
         "--batch-size",
         type=int,
         default=100,
+        help="Batch size for parallel processing [default: %(default)s]",
     )
     parser.add_argument(
         "--de-method",
         type=str,
         default="wilcoxon",
+        help="Method to use for differential expression analysis [default: %(default)s]",
     )
     parser.add_argument(
         "--allow-discrete",
@@ -92,7 +100,8 @@ def parse_args_run(parser: ap.ArgumentParser):
         "--profile",
         type=str,
         default="full",
-        help="Profile of metrics to compute (see docs for more details)",
+        help="Profile of metrics to compute [default: %(default)s]",
+        choices=KNOWN_PROFILES,
     )
     parser.add_argument(
         "--skip-metrics",
