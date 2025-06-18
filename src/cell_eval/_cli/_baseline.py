@@ -2,6 +2,8 @@ import argparse as ap
 import importlib.metadata
 import logging
 
+from ._const import DEFAULT_COUNTS_COL, DEFAULT_CTRL, DEFAULT_PERT_COL
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,40 +28,40 @@ def parse_args_baseline(parser: ap.ArgumentParser):
         "-o",
         "--output-path",
         type=str,
-        help="Path to save the baseline anndata",
+        help="Path to save the baseline anndata [default: %(default)s]",
         default="./baseline.h5ad",
     )
     parser.add_argument(
         "-O",
         "--output-de-path",
         type=str,
-        help="Path to save the baseline differential expression table",
+        help="Path to save the baseline differential expression table [default: %(default)s]",
         default="./baseline_de.csv",
     )
     parser.add_argument(
         "--control-pert",
         type=str,
-        default="non-targeting",
-        help="Name of the control perturbation",
+        default=DEFAULT_CTRL,
+        help="Name of the control perturbation [default: %(default)s]",
     )
     parser.add_argument(
         "--pert-col",
         type=str,
-        default="target_name",
-        help="Name of the column designated perturbations",
+        default=DEFAULT_PERT_COL,
+        help="Name of the column designated perturbations [default: %(default)s]",
     )
     parser.add_argument(
         "--counts-col",
         type=str,
-        default="n_cells",
-        help="Name of the column designated counts in input csv (if provided)",
+        default=DEFAULT_COUNTS_COL,
+        help="Name of the column designated counts in input csv (if provided) [default: %(default)s]",
     )
     parser.add_argument(
         "-t",
         "--num-threads",
         type=int,
         default=1,
-        help="Number of threads to use",
+        help="Number of threads to use [default: %(default)s]",
     )
     parser.add_argument(
         "--allow-discrete",

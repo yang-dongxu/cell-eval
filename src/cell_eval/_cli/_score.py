@@ -24,8 +24,8 @@ def parse_args_score(parser: ap.ArgumentParser):
         "-o",
         "--output",
         type=str,
-        help="Path to csv to write",
         default="./baseline_diff.csv",
+        help="Path to csv to write [default: %(default)s]",
     )
     parser.add_argument(
         "--version",

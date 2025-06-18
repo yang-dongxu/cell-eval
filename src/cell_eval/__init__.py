@@ -1,6 +1,6 @@
 from ._baseline import build_base_mean_adata
 from ._evaluator import MetricsEvaluator
-from ._pipeline import MetricPipeline
+from ._pipeline import KNOWN_PROFILES, MetricPipeline
 from ._score import score_agg_metrics
 from ._types import (
     BulkArrays,
@@ -32,6 +32,7 @@ __all__ = [
     "initialize_de_comparison",
     # Pipeline
     "MetricPipeline",
+    "KNOWN_PROFILES",
     # Global registry
     "metrics_registry",
 ]
