@@ -49,6 +49,12 @@ def parse_args_baseline(parser: ap.ArgumentParser):
         help="Name of the column designated perturbations",
     )
     parser.add_argument(
+        "--counts-col",
+        type=str,
+        default="n_cells",
+        help="Name of the column designated counts in input csv (if provided)",
+    )
+    parser.add_argument(
         "-t",
         "--num-threads",
         type=int,
@@ -86,6 +92,7 @@ def run_baseline(args: ap.Namespace):
         counts_df=args.counts,
         control_pert=args.control_pert,
         pert_col=args.pert_col,
+        counts_col=args.counts_col,
         output_path=args.output_path,
         output_de_path=args.output_de_path if not args.skip_de else None,
         num_threads=args.num_threads,
