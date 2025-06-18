@@ -8,12 +8,11 @@ import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
 from .._evaluator import _convert_to_normlog
+from ._const import DEFAULT_CELLTYPE_COL, DEFAULT_PERT_COL
 
 logger = logging.getLogger(__name__)
 
 VALID_ENCODINGS = [64, 32]
-DEFAULT_PERT_COL_OUTPUT = "target_gene"
-DEFAULT_CELLTYPE_COL_OUTPUT = "celltype"
 
 
 def parse_args_prep(parser: ap.ArgumentParser):
@@ -34,8 +33,8 @@ def parse_args_prep(parser: ap.ArgumentParser):
         "-p",
         "--pert-col",
         type=str,
-        default="target_name",
-        help="Name of the column designated perturbations",
+        default=DEFAULT_PERT_COL,
+        help="Name of the column designated perturbations [default: %(default)s]",
     )
     parser.add_argument(
         "-c",
@@ -47,21 +46,21 @@ def parse_args_prep(parser: ap.ArgumentParser):
         "-P",
         "--output-pert-col",
         type=str,
-        default=DEFAULT_PERT_COL_OUTPUT,
-        help="Name of the column designated perturbations in the output",
+        default=DEFAULT_PERT_COL,
+        help="Name of the column designated perturbations in the output [default: %(default)s]",
     )
     parser.add_argument(
         "-C",
         "--output-celltype-col",
         type=str,
-        default=DEFAULT_CELLTYPE_COL_OUTPUT,
-        help="Name of the column designated celltype in the output",
+        default=DEFAULT_CELLTYPE_COL,
+        help="Name of the column designated celltype in the output [default: %(default)s]",
     )
     parser.add_argument(
         "-e",
         "--encoding",
         type=int,
-        help=f"Bit size to encode ({VALID_ENCODINGS})",
+        help=f"Bit size to encode ({VALID_ENCODINGS}) [default: %(default)s]",
         default=32,
     )
     parser.add_argument(
@@ -80,10 +79,10 @@ def parse_args_prep(parser: ap.ArgumentParser):
 
 def strip_anndata(
     adata: ad.AnnData,
-    pert_col: str = "target_name",
+    pert_col: str = "target_gene",
     celltype_col: str | None = None,
-    output_pert_col: str = DEFAULT_PERT_COL_OUTPUT,
-    output_celltype_col: str = DEFAULT_CELLTYPE_COL_OUTPUT,
+    output_pert_col: str = DEFAULT_PERT_COL,
+    output_celltype_col: str = DEFAULT_CELLTYPE_COL,
     encoding: int = 64,
     allow_discrete: bool = False,
 ):

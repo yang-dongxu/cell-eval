@@ -47,7 +47,7 @@ def parse_args_run(parser: ap.ArgumentParser):
     parser.add_argument(
         "--pert-col",
         type=str,
-        default="target_name",
+        default="target_gene",
         help="Name of the column designated perturbations",
     )
     parser.add_argument(
