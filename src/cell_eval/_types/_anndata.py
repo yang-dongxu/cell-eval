@@ -196,6 +196,10 @@ class PerturbationAnndataPair:
         """Build bulk array for a perturbation."""
         if not embed_key:
             embed_key = "_default"
+
+        assert self.bulk_real is not None, "Bulk real data is missing"
+        assert self.bulk_pred is not None, "Bulk pred data is missing"
+
         # Get the perturbation indices
         pert_pos = np.flatnonzero(self.bulk_real[embed_key][0] == pert)[0]
         ctrl_pos = np.flatnonzero(self.bulk_real[embed_key][0] == self.control_pert)[0]
