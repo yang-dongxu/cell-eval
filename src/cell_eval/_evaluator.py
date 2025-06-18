@@ -4,10 +4,12 @@ import os
 from typing import Any, Literal
 
 import anndata as ad
-import numpy as np
 import pandas as pd
 import polars as pl
+import scanpy as sc
 from pdex import parallel_differential_expression
+
+from cell_eval.utils import guess_is_lognorm
 
 from ._pipeline import MetricPipeline
 from ._types import PerturbationAnndataPair, initialize_de_comparison
@@ -157,8 +159,12 @@ def _build_anndata_pair(
         pred = ad.read_h5ad(pred)
 
     # Validate that the input is normalized and log-transformed
-    _validate_normlog(adata=real, allow_discrete=allow_discrete, n_cells=n_cells)
-    _validate_normlog(adata=pred, allow_discrete=allow_discrete, n_cells=n_cells)
+    _convert_to_normlog(
+        real, n_cells=n_cells, which="real", allow_discrete=allow_discrete
+    )
+    _convert_to_normlog(
+        pred, n_cells=n_cells, which="pred", allow_discrete=allow_discrete
+    )
 
     # Build the anndata pair
     return PerturbationAnndataPair(
@@ -166,26 +172,38 @@ def _build_anndata_pair(
     )
 
 
-def _validate_normlog(
-    adata: ad.AnnData, n_cells: int = 100, allow_discrete: bool = False
+def _convert_to_normlog(
+    adata: ad.AnnData,
+    n_cells: int | float = 5e2,
+    which: str | None = None,
+    allow_discrete: bool = False,
 ):
-    def suspected_discrete(x: np.ndarray, n_cells: int) -> bool:
-        top_n = min(x.shape[0], n_cells)
-        rowsum = x[:top_n].sum(axis=1)
-        frac, _ = np.modf(rowsum)
-        return bool(np.all(frac == 0))
+    """Performs a norm-log conversion if the input is integer data (inplace).
 
-    if suspected_discrete(adata.X, n_cells):  # type: ignore
-        if allow_discrete:
-            logger.warning(
-                "Error: adata appears not to be log-transformed. We expect normed+logged input"
-                " If this is an error, rerun with `allow_discrete=True`"
+    Will skip if the input is not integer data.
+    """
+    if guess_is_lognorm(adata=adata, n_cells=n_cells):
+        return  # Input is already log-normalized
+
+    # User specified that they want to allow discrete data
+    if allow_discrete:
+        if which:
+            logger.info(
+                f"Discovered integer data for {which}. Configuration set to allow discrete. "
+                "Make sure this is intentional."
             )
-            return
-        raise ValueError(
-            "Error: adata appears not to be log-transformed. We expect normed+logged input"
-            " If this is an error, rerun with `allow_discrete=True`"
-        )
+        else:
+            logger.info(
+                "Discovered integer data. Configuration set to allow discrete. "
+                "Make sure this is intentional."
+            )
+        return  # proceed without conversion
+
+    # Convert the data to norm-log
+    if which:
+        logger.info(f"Discovered integer data for {which}. Converting to norm-log.")
+    sc.pp.normalize_total(adata=adata)  # normalize to median
+    sc.pp.log1p(adata=adata)  # log-transform (log1p)
 
 
 def _build_de_comparison(
