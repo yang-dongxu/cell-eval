@@ -6,6 +6,7 @@ import numpy as np
 import polars as pl
 from numpy.typing import NDArray
 from pdex import parallel_differential_expression
+from scipy.sparse import issparse
 
 from ._evaluator import _build_pdex_kwargs
 
@@ -163,7 +164,9 @@ def _build_pert_baseline(
 
     logger.info("Building perturbation-level means")
     pert_means = (
-        pl.DataFrame(adata.X)
+        pl.DataFrame(
+            adata.X if not issparse(adata.X) else adata.X.toarray()  # type: ignore
+        )
         .with_columns(pl.Series(pert_col, adata.obs[pert_col]))
         .group_by(pert_col)
         .mean()
