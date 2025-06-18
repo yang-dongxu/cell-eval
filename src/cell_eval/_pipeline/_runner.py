@@ -24,6 +24,14 @@ VCC_METRICS = [
     "overlap_at_N",
 ]
 
+KNOWN_PROFILES = [
+    "full",
+    "minimal",
+    "vcc",
+    "de",
+    "anndata",
+]
+
 
 class MetricPipeline:
     """Pipeline for computing metrics."""
