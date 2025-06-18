@@ -296,6 +296,7 @@ def _load_or_build_de(
         )
         if outdir is not None:
             pathname = f"{mode}_de.csv" if not prefix else f"{prefix}_{mode}_de.csv"
+            logger.info(f"Writing {mode} DE results to: {pathname}")
             frame.write_csv(os.path.join(outdir, pathname))
 
         return frame  # type: ignore
