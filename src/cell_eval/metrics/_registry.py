@@ -15,9 +15,8 @@ class MetricRegistry:
         name: str,
         metric_type: MetricType,
         description: str,
-        func: Callable[
-            [PerturbationAnndataPair | DEComparison], float | dict[str, float]
-        ],
+        func: Callable[[PerturbationAnndataPair], float | dict[str, float]]
+        | Callable[[DEComparison], float | dict[str, float]],
         best_value: MetricBestValue,
         is_class: bool = False,
         kwargs: dict[str, Any] | None = None,
