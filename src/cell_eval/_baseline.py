@@ -17,6 +17,7 @@ def build_base_mean_adata(
     counts_df: pl.DataFrame | str | None = None,
     pert_col: str = "target_gene",
     control_pert: str = "non-targeting",
+    counts_col: str = "n_cells",
     as_delta: bool = False,
     output_path: str | None = None,
     output_de_path: str | None = None,
@@ -28,13 +29,17 @@ def build_base_mean_adata(
     adata = ad.read_h5ad(adata) if isinstance(adata, str) else adata
     counts = (
         _load_counts_df(
-            counts_df=counts_df, pert_col=pert_col, control_pert=control_pert
+            counts_df=counts_df,
+            pert_col=pert_col,
+            control_pert=control_pert,
+            counts_col=counts_col,
         )
         if counts_df is not None
         else _build_counts_df_from_adata(
             adata=adata,
             pert_col=pert_col,
             control_pert=control_pert,
+            counts_col=counts_col,
         )
     )
     baseline = _build_pert_baseline(
@@ -42,14 +47,16 @@ def build_base_mean_adata(
     )
 
     obs = (
-        counts.select([pl.col(pert_col).repeat_by("len")]).explode(pert_col).to_pandas()
+        counts.select([pl.col(pert_col).repeat_by(counts_col)])
+        .explode(pert_col)
+        .to_pandas()
     )
     obs.index = obs.index.astype(str).str.replace("^", "p.", regex=True)
 
     logger.info("Assembling baseline adata from perturbation mean")
     baseline_adata = ad.AnnData(
         X=np.full(
-            (int(counts["len"].sum()), baseline.size),
+            (int(counts[counts_col].sum()), baseline.size),
             baseline,
         ),
         var=adata.var,
@@ -89,6 +96,7 @@ def _load_counts_df(
     counts_df: pl.DataFrame | str,
     pert_col: str = "target_gene",
     control_pert: str = "non-targeting",
+    counts_col: str = "n_cells",
 ) -> pl.DataFrame:
     if isinstance(counts_df, str):
         logger.info(f"Loading counts from {counts_df}")
@@ -97,6 +105,11 @@ def _load_counts_df(
     if pert_col not in counts_df.columns:
         raise ValueError(
             f"Column '{pert_col}' not found in counts_df: {counts_df.columns}"
+        )
+
+    if counts_col not in counts_df.columns:
+        raise ValueError(
+            f"Column '{counts_col}' not found in counts_df: {counts_df.columns}"
         )
 
     logger.info(f"Filtering out counts from {control_pert}")
@@ -109,6 +122,7 @@ def _build_counts_df_from_adata(
     adata: ad.AnnData,
     pert_col: str = "target_gene",
     control_pert: str = "non-targeting",
+    counts_col: str = "n_cells",
 ) -> pl.DataFrame:
     if pert_col not in adata.obs.columns:
         raise ValueError(
@@ -123,6 +137,7 @@ def _build_counts_df_from_adata(
         pl.DataFrame(adata.obs)
         .group_by(pert_col)
         .len()
+        .rename({"len": counts_col})
         .filter(pl.col(pert_col) != control_pert)
     )
 
