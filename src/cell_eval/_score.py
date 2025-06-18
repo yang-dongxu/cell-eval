@@ -85,12 +85,20 @@ def score_agg_metrics(
         scores_base[idx_norm_by_one],
     )
 
+    # Concatenate the two norm modes, replace nan, and clip lower bound to zero
+    all_scores = np.concatenate([norm_by_zero, norm_by_one])
+    all_scores[np.isnan(all_scores)] = 0.0
+    all_scores = np.clip(all_scores, 0, None)
+
+    # Build output dataframe
     results = pl.DataFrame(
         {
-            "metric": np.concatenate([metrics_by_zero, metrics_by_one]),
-            "from_baseline": np.concatenate([norm_by_zero, norm_by_one]),
+            "metric": np.concatenate(
+                [metrics_by_zero, metrics_by_one, np.array(["avg_score"])]
+            ),
+            "from_baseline": np.concatenate([all_scores, [all_scores.mean()]]),
         }
-    ).with_columns(pl.col("from_baseline").clip(0, None))
+    )
 
     if output is not None:
         logger.info(f"Writing results to {output}")
