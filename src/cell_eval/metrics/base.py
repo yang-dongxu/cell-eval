@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Callable, Protocol
 
-from .._types import DEComparison, MetricType, PerturbationAnndataPair
+from .._types import DEComparison, MetricBestValue, MetricType, PerturbationAnndataPair
 
 
 class Metric(Protocol):
@@ -39,6 +39,7 @@ class MetricInfo:
     type: MetricType
     func: Callable
     description: str
+    best_value: MetricBestValue
     is_class: bool = False
     kwargs: dict[str, Any] | None = None
 
