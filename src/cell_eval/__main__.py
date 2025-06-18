@@ -1,14 +1,15 @@
 import argparse as ap
 import logging
 
-from cell_eval._cli._baseline import parse_args_baseline
-
 from ._cli import (
+    parse_args_baseline,
     parse_args_prep,
     parse_args_run,
+    parse_args_score,
     run_baseline,
     run_evaluation,
     run_prep,
+    run_score,
 )
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ def get_args():
     parse_args_prep(subparsers.add_parser("prep"))
     parse_args_run(subparsers.add_parser("run"))
     parse_args_baseline(subparsers.add_parser("baseline"))
+    parse_args_score(subparsers.add_parser("score"))
     return parser.parse_args()
 
 
@@ -28,14 +30,15 @@ def main():
     Main function to run the evaluation.
     """
     args = get_args()
-    if args.subcommand == "run":
-        run_evaluation(args)
-    elif args.subcommand == "prep":
-        run_prep(args)
-    elif args.subcommand == "baseline":
-        run_baseline(args)
-    else:
-        raise ValueError(f"Unrecognized subcommand: {args.subcommand}")
+    match args.subcommand:
+        case "prep":
+            run_prep(args)
+        case "run":
+            run_evaluation(args)
+        case "baseline":
+            run_baseline(args)
+        case "score":
+            run_score(args)
 
 
 if __name__ == "__main__":

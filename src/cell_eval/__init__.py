@@ -1,6 +1,7 @@
 from ._baseline import build_base_mean_adata
 from ._evaluator import MetricsEvaluator
 from ._pipeline import MetricPipeline
+from ._score import score_agg_metrics
 from ._types import (
     BulkArrays,
     CellArrays,
@@ -18,6 +19,8 @@ __all__ = [
     "MetricsEvaluator",
     # Baseline
     "build_base_mean_adata",
+    # Scoring
+    "score_agg_metrics",
     # Types
     "DEComparison",
     "DEResults",

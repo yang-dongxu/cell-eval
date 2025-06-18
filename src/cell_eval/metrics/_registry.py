@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional
 
-from .._types import DEComparison, MetricType, PerturbationAnndataPair
+from .._types import DEComparison, MetricBestValue, MetricType, PerturbationAnndataPair
 from .base import MetricInfo
 
 
@@ -18,6 +18,7 @@ class MetricRegistry:
         func: Callable[
             [PerturbationAnndataPair | DEComparison], float | dict[str, float]
         ],
+        best_value: MetricBestValue,
         is_class: bool = False,
         kwargs: dict[str, Any] | None = None,
     ):
@@ -29,6 +30,7 @@ class MetricRegistry:
             metric_type: Type of metric being registered
             description: Description of what the metric computes
             func: Function to compute the metric
+            best_value: Best value for the metric
             is_class: Whether the metric is a class that needs instantiation
             kwargs: Optional keyword arguments for the metric
         """
@@ -39,6 +41,7 @@ class MetricRegistry:
             type=metric_type,
             func=func,
             description=description,
+            best_value=best_value,
             is_class=is_class,
             kwargs=kwargs,
         )
