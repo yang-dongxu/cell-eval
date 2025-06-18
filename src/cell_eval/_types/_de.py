@@ -5,6 +5,7 @@ from typing import Iterator, Literal
 
 import numpy as np
 import polars as pl
+from numpy.typing import NDArray
 
 from ._enums import DESortBy
 
@@ -95,7 +96,7 @@ class DEResults:
             [c for c in self.data.columns if c not in numeric_cols + categorical_cols]
         )
 
-    def get_perts(self) -> np.ndarray[str]:
+    def get_perts(self) -> NDArray[np.str_]:
         """Get perturbations."""
         perts = self.data[self.target_col].unique().to_numpy()
         perts.sort()
@@ -103,7 +104,7 @@ class DEResults:
 
     def get_significant_genes(
         self, pert: str, fdr_threshold: float = 0.05
-    ) -> np.ndarray[str]:
+    ) -> NDArray[np.str_]:
         """Get significant genes for a perturbation."""
         return (
             self.data.filter(
@@ -167,7 +168,7 @@ class DEComparison:
     real: DEResults
     pred: DEResults
 
-    perturbations: np.ndarray[str] = field(init=False)
+    perturbations: NDArray[np.str_] = field(init=False)
     n_perts: int = field(init=False)
 
     def __post_init__(self) -> None:
@@ -185,7 +186,7 @@ class DEComparison:
         for pert in self.perturbations:
             yield pert
 
-    def get_perts(self, include_control: bool = False) -> np.ndarray[str]:
+    def get_perts(self, include_control: bool = False) -> NDArray[np.str_]:
         """Get perturbations."""
         if include_control:
             logger.warning("DEComparison should not include control perturbation")

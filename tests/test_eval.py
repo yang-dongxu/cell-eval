@@ -1,5 +1,6 @@
 import os
 import shutil
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -13,6 +14,13 @@ from cell_eval.data import (
 )
 
 OUTDIR = "TEST_OUTPUT_DIRECTORY"
+KNOWN_PROFILES: list[Literal["full", "vcc", "minimal", "de", "anndata"]] = [
+    "full",
+    "vcc",
+    "minimal",
+    "de",
+    "anndata",
+]
 
 
 def test_missing_adata_input_vars():
@@ -202,7 +210,7 @@ def test_eval_simple_profiles():
         control_pert="control",
         pert_col="perturbation",
     )
-    for profile in ["full", "vcc", "minimal", "de", "anndata"]:
+    for profile in KNOWN_PROFILES:
         evaluator.compute(
             profile=profile,
             break_on_error=True,
@@ -210,7 +218,7 @@ def test_eval_simple_profiles():
 
     with pytest.raises(ValueError):
         evaluator.compute(
-            profile="unknown",
+            profile="unknown",  # type: ignore
             break_on_error=True,
         )
 
