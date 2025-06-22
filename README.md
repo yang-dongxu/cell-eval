@@ -2,8 +2,7 @@
 
 ## Description
 
-This package provides evaluation metrics for single-cell perturbation predictions that can be used to assess the accuracy of predictions.
-It is meant to be used either as a command-line tool or as a Python module.
+This package provides a comprehensive suite of metrics for evaluating the performance of models that predict cellular responses to perturbations at the single-cell level. It can be used either as a command-line tool or as a Python module.
 
 ## Installation
 
