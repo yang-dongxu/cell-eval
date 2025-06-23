@@ -13,6 +13,8 @@ from ._const import DEFAULT_CELLTYPE_COL, DEFAULT_PERT_COL
 logger = logging.getLogger(__name__)
 
 VALID_ENCODINGS = [64, 32]
+EXPECTED_GENE_DIM = 18080
+MAX_CELL_DIM = 100000
 
 
 def parse_args_prep(parser: ap.ArgumentParser):
@@ -69,6 +71,18 @@ def parse_args_prep(parser: ap.ArgumentParser):
         help="Bypass log normalization in case we incorrectly guess the data is discrete",
     )
     parser.add_argument(
+        "--expected-gene-dim",
+        type=int,
+        help=f"Expected gene dimension ({EXPECTED_GENE_DIM}) [default: %(default)s]. Set to -1 to disable.",
+        default=EXPECTED_GENE_DIM,
+    )
+    parser.add_argument(
+        "--max-cell-dim",
+        type=int,
+        help=f"Maximum cell dimension ({MAX_CELL_DIM}) [default: %(default)s]. Set to -1 to disable.",
+        default=MAX_CELL_DIM,
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version="%(prog)s {version}".format(
@@ -85,6 +99,8 @@ def strip_anndata(
     output_celltype_col: str = DEFAULT_CELLTYPE_COL,
     encoding: int = 64,
     allow_discrete: bool = False,
+    max_cell_dim: int | None = MAX_CELL_DIM,
+    exp_gene_dim: int | None = EXPECTED_GENE_DIM,
 ):
     if pert_col not in adata.obs:
         raise ValueError(
@@ -95,6 +111,17 @@ def strip_anndata(
             raise ValueError(
                 f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
             )
+
+    if exp_gene_dim and adata.shape[1] != exp_gene_dim:
+        raise ValueError(
+            f"Provided gene dimension: {adata.shape[1]} does not match expected gene dimension: {exp_gene_dim}"
+        )
+
+    if max_cell_dim and adata.shape[0] > max_cell_dim:
+        raise ValueError(
+            f"Provided cell dimension: {adata.shape[0]} exceeds maximum cell dimension: {max_cell_dim}"
+        )
+
     if encoding not in VALID_ENCODINGS:
         raise ValueError(f"Encoding must be in {VALID_ENCODINGS}")
 
@@ -151,6 +178,8 @@ def run_prep(args: ap.Namespace):
         celltype_col=args.celltype_col,
         encoding=args.encoding,
         allow_discrete=args.allow_discrete,
+        exp_gene_dim=args.expected_gene_dim if args.expected_gene_dim != -1 else None,
+        max_cell_dim=args.max_cell_dim if args.max_cell_dim != -1 else None,
     )
     # drop adata from memory
     del adata
