@@ -110,6 +110,9 @@ def strip_anndata(
 ):
     import polars as pl
 
+    # Force anndata var to string
+    adata.var.index = adata.var.index.astype(str)
+
     if pert_col not in adata.obs:
         raise ValueError(
             f"Provided perturbation column: {pert_col} missing from anndata: {adata.obs.columns}"
@@ -120,12 +123,18 @@ def strip_anndata(
                 f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
             )
 
+    # Validate gene identity and ordering
     if genes:
-        genelist = pl.read_csv(genes, has_header=False).to_series(0).to_list()
+        # Read in the genelist and cast to string
+        genelist = pl.read_csv(genes, has_header=False).to_series(0).cast(str).to_list()
+
+        # Check if expected dimension is provided and matches the length of the genelist
         if exp_gene_dim and len(genelist) != exp_gene_dim:
-            raise ValueError(
-                f"Provided gene dimension: {len(genelist)} does not match expected gene dimension: {exp_gene_dim}"
+            logger.warning(
+                f"Provided gene dimension: {len(genelist)} does not match expected gene dimension: {exp_gene_dim}."
             )
+            logger.info(f"Setting expected gene dimension to {len(genelist)}")
+            exp_gene_dim = len(genelist)
     else:
         genelist = adata.var_names.tolist()
 
@@ -142,11 +151,18 @@ def strip_anndata(
     if adata.var_names.tolist() != genelist:
         missing_genes = set(genelist) - set(adata.var_names.tolist())
         extra_genes = set(adata.var_names.tolist()) - set(genelist)
-        raise ValueError(
-            f"Provided gene list: {genelist} does not match anndata gene names: {adata.var_names.tolist()}\n"
-            f"Missing genes: {missing_genes}\n"
-            f"Extra genes: {extra_genes}"
-        )
+        if len(missing_genes) == 0 and len(extra_genes) == 0:
+            logger.warning(
+                "Provided anndata contains all expected genes but they are out of order."
+            )
+            logger.info("Reordering genes...")
+            adata = adata[:, np.array(genelist)]
+        else:
+            raise ValueError(
+                "Provided gene list does not match anndata gene names:\n"
+                f"Missing genes: {missing_genes}\n"
+                f"Extra genes: {extra_genes}"
+            )
 
     if encoding not in VALID_ENCODINGS:
         raise ValueError(f"Encoding must be in {VALID_ENCODINGS}")
