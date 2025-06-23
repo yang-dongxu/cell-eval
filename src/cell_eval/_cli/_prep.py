@@ -138,16 +138,6 @@ def strip_anndata(
     else:
         genelist = adata.var_names.tolist()
 
-    if exp_gene_dim and adata.shape[1] != exp_gene_dim:
-        raise ValueError(
-            f"Provided gene dimension: {adata.shape[1]} does not match expected gene dimension: {exp_gene_dim}"
-        )
-
-    if max_cell_dim and adata.shape[0] > max_cell_dim:
-        raise ValueError(
-            f"Provided cell dimension: {adata.shape[0]} exceeds maximum cell dimension: {max_cell_dim}"
-        )
-
     if adata.var_names.tolist() != genelist:
         missing_genes = set(genelist) - set(adata.var_names.tolist())
         extra_genes = set(adata.var_names.tolist()) - set(genelist)
@@ -163,6 +153,16 @@ def strip_anndata(
                 f"Missing genes: {missing_genes}\n"
                 f"Extra genes: {extra_genes}"
             )
+
+    if exp_gene_dim and adata.shape[1] != exp_gene_dim:
+        raise ValueError(
+            f"Provided gene dimension: {adata.shape[1]} does not match expected gene dimension: {exp_gene_dim}"
+        )
+
+    if max_cell_dim and adata.shape[0] > max_cell_dim:
+        raise ValueError(
+            f"Provided cell dimension: {adata.shape[0]} exceeds maximum cell dimension: {max_cell_dim}"
+        )
 
     if encoding not in VALID_ENCODINGS:
         raise ValueError(f"Encoding must be in {VALID_ENCODINGS}")
