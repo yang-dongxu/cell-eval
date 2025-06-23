@@ -1,4 +1,4 @@
-# cell-bench
+# cell-eval
 
 ## Description
 
