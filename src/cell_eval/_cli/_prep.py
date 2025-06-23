@@ -59,6 +59,11 @@ def parse_args_prep(parser: ap.ArgumentParser):
         help="Name of the column designated celltype in the output [default: %(default)s]",
     )
     parser.add_argument(
+        "--genes",
+        type=str,
+        help="CSV file containing expected gene names and order",
+    )
+    parser.add_argument(
         "-e",
         "--encoding",
         type=int,
@@ -99,9 +104,12 @@ def strip_anndata(
     output_celltype_col: str = DEFAULT_CELLTYPE_COL,
     encoding: int = 64,
     allow_discrete: bool = False,
+    genes: str | None = None,
     max_cell_dim: int | None = MAX_CELL_DIM,
     exp_gene_dim: int | None = EXPECTED_GENE_DIM,
 ):
+    import polars as pl
+
     if pert_col not in adata.obs:
         raise ValueError(
             f"Provided perturbation column: {pert_col} missing from anndata: {adata.obs.columns}"
@@ -112,6 +120,15 @@ def strip_anndata(
                 f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
             )
 
+    if genes:
+        genelist = pl.read_csv(genes, has_header=False).to_series(0).to_list()
+        if exp_gene_dim and len(genelist) != exp_gene_dim:
+            raise ValueError(
+                f"Provided gene dimension: {len(genelist)} does not match expected gene dimension: {exp_gene_dim}"
+            )
+    else:
+        genelist = adata.var_names.tolist()
+
     if exp_gene_dim and adata.shape[1] != exp_gene_dim:
         raise ValueError(
             f"Provided gene dimension: {adata.shape[1]} does not match expected gene dimension: {exp_gene_dim}"
@@ -120,6 +137,15 @@ def strip_anndata(
     if max_cell_dim and adata.shape[0] > max_cell_dim:
         raise ValueError(
             f"Provided cell dimension: {adata.shape[0]} exceeds maximum cell dimension: {max_cell_dim}"
+        )
+
+    if adata.var_names.tolist() != genelist:
+        missing_genes = set(genelist) - set(adata.var_names.tolist())
+        extra_genes = set(adata.var_names.tolist()) - set(genelist)
+        raise ValueError(
+            f"Provided gene list: {genelist} does not match anndata gene names: {adata.var_names.tolist()}\n"
+            f"Missing genes: {missing_genes}\n"
+            f"Extra genes: {extra_genes}"
         )
 
     if encoding not in VALID_ENCODINGS:
@@ -180,6 +206,7 @@ def run_prep(args: ap.Namespace):
         allow_discrete=args.allow_discrete,
         exp_gene_dim=args.expected_gene_dim if args.expected_gene_dim != -1 else None,
         max_cell_dim=args.max_cell_dim if args.max_cell_dim != -1 else None,
+        genes=args.genes,
     )
     # drop adata from memory
     del adata
