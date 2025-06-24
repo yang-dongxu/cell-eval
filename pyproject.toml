@@ -1,6 +1,6 @@
 [project]
 name = "cell-eval"
-version = "0.5.36"
+version = "0.5.37"
 description = "Evaluation metrics for single-cell perturbation predictions"
 readme = "README.md"
 authors = [
