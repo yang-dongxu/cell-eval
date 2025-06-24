@@ -88,6 +88,11 @@ def parse_args_prep(parser: ap.ArgumentParser):
         default=MAX_CELL_DIM,
     )
     parser.add_argument(
+        "--skip-watermark",
+        action="store_true",
+        help="Skip watermarking the data",
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version="%(prog)s {version}".format(
@@ -107,6 +112,7 @@ def strip_anndata(
     genes: str | None = None,
     max_cell_dim: int | None = MAX_CELL_DIM,
     exp_gene_dim: int | None = EXPECTED_GENE_DIM,
+    watermark: bool = True,
 ):
     import polars as pl
 
@@ -205,6 +211,10 @@ def strip_anndata(
 
     logger.info("Applying normlog transformation if required")
     _convert_to_normlog(minimal, allow_discrete=allow_discrete)
+
+    if watermark:
+        logger.info("Noting prep pass")
+        minimal.uns["prep-pass"] = True
 
     return minimal
 
