@@ -67,7 +67,7 @@ for distance_metric in ["l1", "l2", "cosine"]:
         name=f"discrimination_score_{distance_metric}",
         metric_type=MetricType.ANNDATA_PAIR,
         description=f"Determines similarity of each pred representation to real via normalized rank: {distance_metric}",
-        best_value=MetricBestValue.ZERO,
+        best_value=MetricBestValue.ONE,
         func=discrimination_score,
         kwargs={"metric": distance_metric},
     )
