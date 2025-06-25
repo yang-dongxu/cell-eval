@@ -134,6 +134,8 @@ def discrimination_score(
 ) -> dict[str, float]:
     """Base implementation for discrimination score computation.
 
+    Best score is 1.0 - worst score is 0.0.
+
     Args:
         data: PerturbationAnndataPair containing real and predicted data
         embed_key: Key for embedding data in obsm, None for expression data
@@ -191,7 +193,7 @@ def discrimination_score(
 
         # Normalize rank by total number of perturbations
         norm_rank = rank / data.perts.size
-        norm_ranks[str(p)] = norm_rank
+        norm_ranks[str(p)] = 1 - norm_rank
 
     return norm_ranks
 
