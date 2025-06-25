@@ -183,6 +183,9 @@ def _convert_to_normlog(
     Will skip if the input is not integer data.
     """
     if guess_is_lognorm(adata=adata, n_cells=n_cells):
+        logger.info(
+            "Input is found to be log-normalized already - skipping transformation."
+        )
         return  # Input is already log-normalized
 
     # User specified that they want to allow discrete data
