@@ -242,5 +242,4 @@ def run_prep(args: ap.Namespace):
     logger.info(f"Writing output to {outpath}")
     minimal.write_h5ad(
         outpath,
-        compression="gzip",
     )
