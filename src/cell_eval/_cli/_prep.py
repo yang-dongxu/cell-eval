@@ -246,34 +246,6 @@ def strip_anndata(
 
         logger.info("Done")
 
-    # # Write the h5ad to a tempfile
-    # tmp_h5ad = NamedTemporaryFile(delete=False)
-    # logger.info(f"Writing h5ad output to {tmp_h5ad.name}")
-    # minimal.write_h5ad(tmp_h5ad.name)
-
-    # # Zstd compress the h5ad file
-    # logger.info(f"Zstd compressing {tmp_h5ad.name}")
-    # subprocess.run(["zstd", "-T0", "-f", "--rm", tmp_h5ad.name])
-
-    # # Write the watermark to a tempfile
-    # tmp_watermark = NamedTemporaryFile(delete=False)
-    # with open(tmp_watermark.name, "w") as f:
-    #     f.write("vcc-prep")
-    #     f.close()
-
-    # # Pack the files into a tarball
-    # logger.info(f"Packing files into {output_path}")
-    # subprocess.run(
-    #     ["tar", "-cf", output_path, f"{tmp_h5ad.name}.zst", tmp_watermark.name]
-    # )
-
-    # logger.info("Removing temporary files")
-    # subprocess.run(["rm", tmp_h5ad.name, tmp_watermark.name])
-
-    # logger.info("Done")
-
-    # return minimal
-
 
 def _validate_tools_in_path():
     if shutil.which("tar") is None:
