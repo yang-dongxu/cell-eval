@@ -2,6 +2,7 @@ uv.lock
 **/__pycache__
 eval_output/
 **/celltype*csv
+.DS_Store
 
 
 ## Custom State-Eval Ignores
