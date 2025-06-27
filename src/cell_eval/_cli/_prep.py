@@ -12,7 +12,7 @@ import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
 from .._evaluator import _convert_to_normlog
-from ._const import DEFAULT_CELLTYPE_COL, DEFAULT_PERT_COL
+from ._const import DEFAULT_CELLTYPE_COL, DEFAULT_NTC_NAME, DEFAULT_PERT_COL
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +47,13 @@ def parse_args_prep(parser: ap.ArgumentParser):
         "--celltype-col",
         type=str,
         help="Name of the column designated celltype (optional)",
+    )
+    parser.add_argument(
+        "-n",
+        "--ntc-name",
+        type=str,
+        default=DEFAULT_NTC_NAME,
+        help="Name of the column designated negative control (optional) [default: %(default)s]",
     )
     parser.add_argument(
         "-P",
@@ -107,6 +114,7 @@ def strip_anndata(
     celltype_col: str | None = None,
     output_pert_col: str = DEFAULT_PERT_COL,
     output_celltype_col: str = DEFAULT_CELLTYPE_COL,
+    ntc_name: str = DEFAULT_NTC_NAME,
     encoding: int = 64,
     allow_discrete: bool = False,
     genes: str | None = None,
@@ -128,6 +136,10 @@ def strip_anndata(
             raise ValueError(
                 f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
             )
+    if ntc_name not in adata.obs[pert_col].unique():
+        raise ValueError(
+            f"Provided negative control name: {ntc_name} missing from anndata: {adata.obs[pert_col].unique()}"
+        )
 
     # Validate gene identity and ordering
     if genes:
