@@ -1,6 +1,10 @@
 import argparse as ap
 import importlib.metadata
 import logging
+import os
+import shutil
+import subprocess
+from tempfile import TemporaryDirectory
 
 import anndata as ad
 import numpy as np
@@ -8,7 +12,7 @@ import pandas as pd
 from scipy.sparse import csr_matrix, issparse
 
 from .._evaluator import _convert_to_normlog
-from ._const import DEFAULT_CELLTYPE_COL, DEFAULT_PERT_COL
+from ._const import DEFAULT_CELLTYPE_COL, DEFAULT_NTC_NAME, DEFAULT_PERT_COL
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +33,7 @@ def parse_args_prep(parser: ap.ArgumentParser):
         "-o",
         "--output",
         type=str,
-        help="Path to h5ad to write",
+        help="Path to vcc to write [default: <input>.prep.vcc]",
     )
     parser.add_argument(
         "-p",
@@ -43,6 +47,13 @@ def parse_args_prep(parser: ap.ArgumentParser):
         "--celltype-col",
         type=str,
         help="Name of the column designated celltype (optional)",
+    )
+    parser.add_argument(
+        "-n",
+        "--ntc-name",
+        type=str,
+        default=DEFAULT_NTC_NAME,
+        help="Name of the column designated negative control (optional) [default: %(default)s]",
     )
     parser.add_argument(
         "-P",
@@ -88,11 +99,6 @@ def parse_args_prep(parser: ap.ArgumentParser):
         default=MAX_CELL_DIM,
     )
     parser.add_argument(
-        "--skip-watermark",
-        action="store_true",
-        help="Skip watermarking the data",
-    )
-    parser.add_argument(
         "--version",
         action="version",
         version="%(prog)s {version}".format(
@@ -103,16 +109,17 @@ def parse_args_prep(parser: ap.ArgumentParser):
 
 def strip_anndata(
     adata: ad.AnnData,
+    output_path: str,
     pert_col: str = "target_gene",
     celltype_col: str | None = None,
     output_pert_col: str = DEFAULT_PERT_COL,
     output_celltype_col: str = DEFAULT_CELLTYPE_COL,
+    ntc_name: str = DEFAULT_NTC_NAME,
     encoding: int = 64,
     allow_discrete: bool = False,
     genes: str | None = None,
     max_cell_dim: int | None = MAX_CELL_DIM,
     exp_gene_dim: int | None = EXPECTED_GENE_DIM,
-    watermark: bool = True,
 ):
     import polars as pl
 
@@ -121,13 +128,17 @@ def strip_anndata(
 
     if pert_col not in adata.obs:
         raise ValueError(
-            f"Provided perturbation column: {pert_col} missing from anndata: {adata.obs.columns}"
+            f"Provided perturbation column: '{pert_col}' missing from anndata: {adata.obs.columns}"
         )
     if celltype_col:
         if celltype_col not in adata.obs:
             raise ValueError(
-                f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
+                f"Provided celltype column: '{celltype_col}' missing from anndata: {adata.obs.columns}"
             )
+    if ntc_name not in adata.obs[pert_col].unique():
+        raise ValueError(
+            f"Provided negative control name: '{ntc_name}' missing from anndata: {adata.obs[pert_col].unique()}"
+        )
 
     # Validate gene identity and ordering
     if genes:
@@ -212,20 +223,61 @@ def strip_anndata(
     logger.info("Applying normlog transformation if required")
     _convert_to_normlog(minimal, allow_discrete=allow_discrete)
 
-    if watermark:
-        logger.info("Noting prep pass")
-        minimal.uns["prep-pass"] = True
+    # Create a temporary directory to work in
+    with TemporaryDirectory() as temp_dir:
+        # Create temp files with specific names
+        tmp_h5ad = os.path.join(temp_dir, "pred.h5ad")
+        tmp_watermark = os.path.join(temp_dir, "watermark.txt")
 
-    return minimal
+        # Write the h5ad file
+        logger.info(f"Writing h5ad output to {tmp_h5ad}")
+        minimal.write_h5ad(tmp_h5ad)
+
+        # Zstd compress the h5ad file (will create pred.h5ad.zst)
+        logger.info(f"Zstd compressing {tmp_h5ad}")
+        subprocess.run(["zstd", "-T0", "-f", "--rm", tmp_h5ad])
+
+        # Write the watermark file
+        with open(tmp_watermark, "w") as f:
+            f.write("vcc-prep")
+
+        # Pack the files into a tarball
+        logger.info(f"Packing files into {output_path}")
+        subprocess.run(
+            [
+                "tar",
+                "-cf",
+                output_path,
+                "-C",
+                temp_dir,
+                "pred.h5ad.zst",
+                "watermark.txt",
+            ]
+        )
+
+        logger.info("Done")
+
+
+def _validate_tools_in_path():
+    if shutil.which("tar") is None:
+        raise ValueError("tar is not installed")
+    if shutil.which("zstd") is None:
+        raise ValueError("zstd is not installed")
+    return True
 
 
 def run_prep(args: ap.Namespace):
+    _validate_tools_in_path()
+
     logger.info("Reading input anndata")
     adata = ad.read_h5ad(args.input)
 
     logger.info("Preparing anndata")
-    minimal = strip_anndata(
+    strip_anndata(
         adata,
+        output_path=args.output
+        if args.output
+        else args.input.replace(".h5ad", ".prep.vcc"),
         pert_col=args.pert_col,
         celltype_col=args.celltype_col,
         encoding=args.encoding,
@@ -233,14 +285,4 @@ def run_prep(args: ap.Namespace):
         exp_gene_dim=args.expected_gene_dim if args.expected_gene_dim != -1 else None,
         max_cell_dim=args.max_cell_dim if args.max_cell_dim != -1 else None,
         genes=args.genes,
-    )
-    # drop adata from memory
-    del adata
-
-    # write output
-    outpath = args.output if args.output else args.input.replace(".h5ad", ".prep.h5ad")
-    logger.info(f"Writing output to {outpath}")
-    minimal.write_h5ad(
-        outpath,
-        compression="gzip",
     )
