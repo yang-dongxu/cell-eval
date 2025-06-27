@@ -120,7 +120,6 @@ def strip_anndata(
     genes: str | None = None,
     max_cell_dim: int | None = MAX_CELL_DIM,
     exp_gene_dim: int | None = EXPECTED_GENE_DIM,
-    watermark: bool = True,
 ):
     import polars as pl
 
@@ -129,16 +128,16 @@ def strip_anndata(
 
     if pert_col not in adata.obs:
         raise ValueError(
-            f"Provided perturbation column: {pert_col} missing from anndata: {adata.obs.columns}"
+            f"Provided perturbation column: '{pert_col}' missing from anndata: {adata.obs.columns}"
         )
     if celltype_col:
         if celltype_col not in adata.obs:
             raise ValueError(
-                f"Provided celltype column: {celltype_col} missing from anndata: {adata.obs.columns}"
+                f"Provided celltype column: '{celltype_col}' missing from anndata: {adata.obs.columns}"
             )
     if ntc_name not in adata.obs[pert_col].unique():
         raise ValueError(
-            f"Provided negative control name: {ntc_name} missing from anndata: {adata.obs[pert_col].unique()}"
+            f"Provided negative control name: '{ntc_name}' missing from anndata: {adata.obs[pert_col].unique()}"
         )
 
     # Validate gene identity and ordering
