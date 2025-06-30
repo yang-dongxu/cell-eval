@@ -29,17 +29,19 @@ To get started you'll need to have two anndata files.
 1. a predicted anndata (`adata_pred`).
 2. a real anndata to compare against (`adata_real`).
 
-### Prep
+### Prep (VCC)
 
-To prepare an anndata for evaluation you can use the `cell-eval prep` command.
+To prepare an anndata for [VCC evaluation](https://virtualcellchallenge.org/) you can use the `cell-eval prep` command.
 This will strip the anndata to bare essentials, compress it, adjust naming conventions, and ensure compatibility with the evaluation framework.
 
 This step is optional for downstream usage, but recommended for optimal performance and compatibility.
 
-Run this on both the predicted and real anndata files:
+Run this on your predicted anndata:
 
 ```bash
-cell-eval prep -i <your/path/to>.h5ad -o prep.h5ad --pert-col <YOUR_PERTURBATION_COLUMN>
+cell-eval prep \
+    -i <your/path/to>.h5ad \
+    -g <expected_genelist>
 ```
 
 ### Run

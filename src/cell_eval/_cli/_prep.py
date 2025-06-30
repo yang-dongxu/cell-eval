@@ -9,6 +9,7 @@ from tempfile import TemporaryDirectory
 import anndata as ad
 import numpy as np
 import pandas as pd
+import polars as pl
 from scipy.sparse import csr_matrix, issparse
 
 from .._evaluator import _convert_to_normlog
@@ -28,6 +29,13 @@ def parse_args_prep(parser: ap.ArgumentParser):
         type=str,
         help="Path to h5ad to read",
         required=True,
+    )
+    parser.add_argument(
+        "-g",
+        "--genes",
+        type=str,
+        required=True,
+        help="CSV file containing expected gene names and order",
     )
     parser.add_argument(
         "-o",
@@ -70,11 +78,6 @@ def parse_args_prep(parser: ap.ArgumentParser):
         help="Name of the column designated celltype in the output [default: %(default)s]",
     )
     parser.add_argument(
-        "--genes",
-        type=str,
-        help="CSV file containing expected gene names and order",
-    )
-    parser.add_argument(
         "-e",
         "--encoding",
         type=int,
@@ -110,6 +113,7 @@ def parse_args_prep(parser: ap.ArgumentParser):
 def strip_anndata(
     adata: ad.AnnData,
     output_path: str,
+    genelist: list[str],
     pert_col: str = "target_gene",
     celltype_col: str | None = None,
     output_pert_col: str = DEFAULT_PERT_COL,
@@ -117,12 +121,9 @@ def strip_anndata(
     ntc_name: str = DEFAULT_NTC_NAME,
     encoding: int = 64,
     allow_discrete: bool = False,
-    genes: str | None = None,
     max_cell_dim: int | None = MAX_CELL_DIM,
     exp_gene_dim: int | None = EXPECTED_GENE_DIM,
 ):
-    import polars as pl
-
     # Force anndata var to string
     adata.var.index = adata.var.index.astype(str)
 
@@ -140,20 +141,13 @@ def strip_anndata(
             f"Provided negative control name: '{ntc_name}' missing from anndata: {adata.obs[pert_col].unique()}"
         )
 
-    # Validate gene identity and ordering
-    if genes:
-        # Read in the genelist and cast to string
-        genelist = pl.read_csv(genes, has_header=False).to_series(0).cast(str).to_list()
-
-        # Check if expected dimension is provided and matches the length of the genelist
-        if exp_gene_dim and len(genelist) != exp_gene_dim:
-            logger.warning(
-                f"Provided gene dimension: {len(genelist)} does not match expected gene dimension: {exp_gene_dim}."
-            )
-            logger.info(f"Setting expected gene dimension to {len(genelist)}")
-            exp_gene_dim = len(genelist)
-    else:
-        genelist = adata.var_names.tolist()
+    # Check if expected dimension is provided and matches the length of the genelist
+    if exp_gene_dim and len(genelist) != exp_gene_dim:
+        logger.warning(
+            f"Provided gene dimension: {len(genelist)} does not match expected gene dimension: {exp_gene_dim}."
+        )
+        logger.info(f"Setting expected gene dimension to {len(genelist)}")
+        exp_gene_dim = len(genelist)
 
     if adata.var_names.tolist() != genelist:
         missing_genes = set(genelist) - set(adata.var_names.tolist())
@@ -272,9 +266,15 @@ def run_prep(args: ap.Namespace):
     logger.info("Reading input anndata")
     adata = ad.read_h5ad(args.input)
 
+    logger.info("Reading gene list")
+    genelist = (
+        pl.read_csv(args.genes, has_header=False).to_series(0).cast(str).to_list()
+    )
+
     logger.info("Preparing anndata")
     strip_anndata(
         adata,
+        genelist=genelist,
         output_path=args.output
         if args.output
         else args.input.replace(".h5ad", ".prep.vcc"),
@@ -284,5 +284,4 @@ def run_prep(args: ap.Namespace):
         allow_discrete=args.allow_discrete,
         exp_gene_dim=args.expected_gene_dim if args.expected_gene_dim != -1 else None,
         max_cell_dim=args.max_cell_dim if args.max_cell_dim != -1 else None,
-        genes=args.genes,
     )
