@@ -1,12 +1,11 @@
 import anndata as ad
 import numpy as np
 
-EPSILON = 1e-6
-
 
 def guess_is_lognorm(
     adata: ad.AnnData,
     n_cells: int | float = 5e2,
+    epsilon: float = 1e-2,
 ) -> bool:
     """Guess if the input is integer counts or log-normalized.
 
@@ -25,8 +24,8 @@ def guess_is_lognorm(
     # Sum the counts for each cell
     cell_sums = adata.X[cell_mask].sum(axis=1)  # type: ignore (can be float but super unlikely)
 
-    # Check if any cell sum's fractional part is greater than EPSILON
-    return bool(np.any((cell_sums - cell_sums.round()) > EPSILON))
+    # Check if any cell sum's fractional part is greater than epsilon
+    return bool(np.any(np.abs((cell_sums - cell_sums.round())) > epsilon))
 
 
 def split_anndata_on_celltype(
