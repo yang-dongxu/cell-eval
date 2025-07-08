@@ -25,10 +25,8 @@ def guess_is_lognorm(
     # Sum the counts for each cell
     cell_sums = adata.X[cell_mask].sum(axis=1)  # type: ignore (can be float but super unlikely)
 
-    fracs, _ = np.modf(cell_sums)
-
-    # Check if all fractional components are less than EPSILON (i.e. zero)
-    return bool(np.any(np.abs(fracs) > EPSILON))
+    # Check if any cell sum's fractional part is greater than EPSILON
+    return bool(np.any((cell_sums - cell_sums.round()) > EPSILON))
 
 
 def split_anndata_on_celltype(
