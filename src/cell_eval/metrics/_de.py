@@ -54,7 +54,7 @@ class DESpearmanSignificant:
             left_on=data.real.target_col,
             right_on=data.pred.target_col,
             suffix="_pred",
-            how="full",
+            how="left",
             coalesce=True,
         ).fill_null(0)
 
