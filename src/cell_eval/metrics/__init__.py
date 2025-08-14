@@ -9,6 +9,7 @@ from ._anndata import (
     mse_delta,
     pearson_delta,
 )
+from ._dict import discrimination_score_dict
 from ._de import (
     DEDirectionMatch,
     DENsigCounts,
@@ -31,6 +32,7 @@ __all__ = [
     "mse_delta",
     "mae_delta",
     "discrimination_score",
+    "discrimination_score_dict",
     # DE metrics
     "DEDirectionMatch",
     "DESpearmanSignificant",
